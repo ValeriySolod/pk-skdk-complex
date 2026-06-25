@@ -1,0 +1,16 @@
+body { margin: 0; font-family: Inter, Arial, sans-serif; background: #f4f6f8; color: #14213d; }
+.layout { min-height: 100vh; display: grid; grid-template-columns: 280px 1fr; }
+.sidebar { background: #0f172a; color: white; padding: 24px; }
+.sidebar h1 { margin: 0 0 8px; font-size: 24px; }
+.sidebar p { margin: 0 0 24px; color: #cbd5e1; }
+.sidebar nav { display: grid; gap: 8px; }
+.sidebar a { color: #e2e8f0; text-decoration: none; padding: 10px 12px; border-radius: 10px; }
+.sidebar a.active, .sidebar a:hover { background: #1e293b; }
+.content { padding: 32px; }
+.panel { background: white; border-radius: 18px; padding: 24px; box-shadow: 0 10px 30px rgba(15,23,42,.08); margin-bottom: 20px; }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 8px 24px rgba(15,23,42,.08); }
+input, button, select { padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; }
+button { cursor: pointer; background: #1d4ed8; color: white; border: none; }
+table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; }
+th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
