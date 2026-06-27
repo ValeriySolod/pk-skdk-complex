@@ -1,0 +1,35 @@
+.button {
+    padding: 9px 14px;
+    border: none;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.primary {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.primary:hover {
+    background: #1d4ed8;
+}
+
+.secondary {
+    background: #64748b;
+    color: #ffffff;
+}
+
+.secondary:hover {
+    background: #475569;
+}
+
+.danger {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+.danger:hover {
+    background: #b91c1c;
+}
