@@ -7,7 +7,15 @@ import { SearchPage } from '../modules/search/SearchPage';
 import { AnalyticsPage } from '../modules/analytics/AnalyticsPage';
 import { AdminPage } from '../modules/admin/AdminPage';
 import { WorkflowPage } from '../modules/workflow/WorkflowPage';
+import { OrganizationsPage } from '../modules/organizations/OrganizationsPage';
 
+export const modules = [
+  {
+    title: 'Організації',
+    path: 'organizations',
+    Component: OrganizationsPage,
+  },
+];
 export type FrontendModule = {
   code: string;
   title: string;
@@ -26,3 +34,23 @@ export const modules: FrontendModule[] = [
   { code: 'workflow', title: 'Процес', path: '/workflow', Component: WorkflowPage },
   { code: 'admin', title: 'Адміністрування', path: '/admin', Component: AdminPage },
 ];
+export interface Organization {
+  id: number;
+  name: string;
+  edrpou?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface OrganizationCreateData {
+  name: string;
+  edrpou?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  description?: string;
+}
