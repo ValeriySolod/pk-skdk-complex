@@ -29,7 +29,7 @@ export function Tabs({
 }: TabsProps) {
   const generatedId = useId();
   const activeIndex = items.findIndex((item) => item.id === value);
-
+  const firstEnabledIndex = items.findIndex((item) => !item.disabled);
   const enabledItems = items.filter((item) => !item.disabled);
 
   const focusTab = (id: string) => {
@@ -100,7 +100,8 @@ export function Tabs({
     >
       {items.map((item, index) => {
         const selected = item.id === value;
-        const tabIndex = selected || (activeIndex === -1 && index === 0) ? 0 : -1;
+        const isFallbackFocusable = activeIndex === -1 && index === firstEnabledIndex;
+        const tabIndex = selected || isFallbackFocusable ? 0 : -1;
 
         return (
           <button
