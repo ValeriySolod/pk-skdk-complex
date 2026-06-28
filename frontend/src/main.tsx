@@ -8,7 +8,7 @@ import LoginPage from './pages/LoginPage/LoginPage';
 import { getMe, logout, type User } from './api/auth';
 import { getToken } from './api/client';
 import { IncomingRegistryPage } from './modules/registries/pages/IncomingRegistryPage';
-
+import { ToastProvider } from './shared/ui';
 const router = createBrowserRouter([
   {
     path: '/',
@@ -67,6 +67,8 @@ function Root() {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Root />
+    <ToastProvider>
+      <Root />
+    </ToastProvider>
   </React.StrictMode>,
 );
