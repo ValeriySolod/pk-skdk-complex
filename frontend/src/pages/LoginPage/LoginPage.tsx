@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { login } from '../../api/auth';
+import { Input } from '../../shared/ui';
 import css from './LoginPage.module.css';
 
 interface LoginPageProps {
@@ -35,26 +36,20 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         <p className={css.subtitle}>Вхід до системи контролю доставки кореспонденції</p>
 
         <form className={css.form} onSubmit={handleSubmit}>
-          <label className={css.label}>
-            Логін
-            <input
-              className={css.input}
-              value={username}
-              onChange={event => setUsername(event.target.value)}
-              autoComplete="username"
-            />
-          </label>
+          <Input
+            label="Логін"
+            value={username}
+            onChange={event => setUsername(event.target.value)}
+            autoComplete="username"
+          />
 
-          <label className={css.label}>
-            Пароль
-            <input
-              className={css.input}
-              type="password"
-              value={password}
-              onChange={event => setPassword(event.target.value)}
-              autoComplete="current-password"
-            />
-          </label>
+          <Input
+            label="Пароль"
+            type="password"
+            value={password}
+            onChange={event => setPassword(event.target.value)}
+            autoComplete="current-password"
+          />
 
           {error && <p className={css.error}>{error}</p>}
 

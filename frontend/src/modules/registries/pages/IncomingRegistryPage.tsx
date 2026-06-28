@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { createRegistry, fetchRegistries } from '../api/registries';
 import { RegistryForm } from '../components/RegistryForm';
 import { RegistryTable } from '../components/RegistryTable';
+import { Input } from '../../../shared/ui';
 import type { CreateRegistryPayload, RegistryRecord } from '../types';
 import css from '../RegistriesPage.module.css';
 
@@ -72,8 +73,9 @@ export function IncomingRegistryPage() {
           ← До реєстрів
         </Link>
 
-        <input
+        <Input
           className={css.searchInput}
+          type="search"
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder="Пошук за номером, статусом або QR..."

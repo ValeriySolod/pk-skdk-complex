@@ -6,7 +6,7 @@ import {
   updateOrganization,
 } from './api';
 import type { Organization, OrganizationCreateData } from './types';
-import { Button, Card, EmptyState, Loader, PageHeader, SearchBox } from '../../shared/ui';
+import { Button, Card, EmptyState, Input, Loader, PageHeader, SearchBox } from '../../shared/ui';
 import styles from './OrganizationsPage.module.css';
 
 const emptyForm: OrganizationCreateData = {
@@ -162,34 +162,23 @@ export function OrganizationsPage() {
           <form className={styles.form} onSubmit={handleSubmit}>
             <h2>{editingId ? 'Редагувати організацію' : 'Додати організацію'}</h2>
 
-            <label>
-              Назва *
-              <input name="name" value={form.name} onChange={handleChange} />
-            </label>
+            <Input label="Назва" name="name" value={form.name} onChange={handleChange} required />
 
-            <label>
-              ЄДРПОУ
-              <input name="edrpou" value={form.edrpou ?? ''} onChange={handleChange} />
-            </label>
+            <Input label="ЄДРПОУ" name="edrpou" value={form.edrpou ?? ''} onChange={handleChange} />
 
             <label>
               Адреса *
               <textarea name="address" value={form.address} onChange={handleChange} />
             </label>
 
-            <label>
-              Відповідальна особа
-              <input
-                name="responsible_person"
-                value={form.responsible_person ?? ''}
-                onChange={handleChange}
-              />
-            </label>
+            <Input
+              label="Відповідальна особа"
+              name="responsible_person"
+              value={form.responsible_person ?? ''}
+              onChange={handleChange}
+            />
 
-            <label>
-              Телефон
-              <input name="phone" value={form.phone ?? ''} onChange={handleChange} />
-            </label>
+            <Input label="Телефон" name="phone" value={form.phone ?? ''} onChange={handleChange} />
 
             <div className={styles.actions}>
               <Button type="submit">

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Input } from '../../shared/ui';
 import { api } from '../../shared/api/client';
 import type { Shipment } from '../../shared/types/domain';
 
@@ -22,7 +23,7 @@ export function ScannerPage() {
     <section className="panel">
       <h2>Пошук за штрих/QR-кодом</h2>
       <p>Після сканування система знаходить картку і переводить її на наступний технологічний етап.</p>
-      <input value={barcode} onChange={(e) => setBarcode(e.target.value)} placeholder="PKSKDK-000001" /> <button onClick={scan}>Сканувати</button>
+      <Input value={barcode} onChange={(e) => setBarcode(e.target.value)} placeholder="PKSKDK-000001" /> <button onClick={scan}>Сканувати</button>
       {error && <p>{error}</p>}
       {result && <div className="card"><b>{result.barcode}</b><p>{result.recipient_name}</p><p>Статус: {result.status}</p></div>}
     </section>

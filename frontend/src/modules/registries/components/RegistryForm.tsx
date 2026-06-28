@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { CreateRegistryPayload } from '../types';
+import { Input } from '../../../shared/ui';
 import css from '../RegistriesPage.module.css';
 
 interface RegistryFormProps {
@@ -34,34 +35,28 @@ export function RegistryForm({ onSubmit }: RegistryFormProps) {
 
   return (
     <form className={css.panelForm} onSubmit={handleSubmit}>
-      <label>
-        Номер реєстру
-        <input
-          value={number}
-          onChange={(event) => setNumber(event.target.value)}
-          placeholder="ВХ-2026-001"
-          required
-        />
-      </label>
+      <Input
+        label="Номер реєстру"
+        value={number}
+        onChange={(event) => setNumber(event.target.value)}
+        placeholder="ВХ-2026-001"
+        required
+      />
 
-      <label>
-        ID організації-відправника
-        <input
-          type="number"
-          value={senderOrgId}
-          onChange={(event) => setSenderOrgId(event.target.value)}
-          required
-        />
-      </label>
+      <Input
+        label="ID організації-відправника"
+        type="number"
+        value={senderOrgId}
+        onChange={(event) => setSenderOrgId(event.target.value)}
+        required
+      />
 
-      <label>
-        QR payload
-        <input
-          value={qrPayload}
-          onChange={(event) => setQrPayload(event.target.value)}
-          placeholder="PK-SKDK:REGISTRY:001"
-        />
-      </label>
+      <Input
+        label="QR payload"
+        value={qrPayload}
+        onChange={(event) => setQrPayload(event.target.value)}
+        placeholder="PK-SKDK:REGISTRY:001"
+      />
 
       <button type="submit" disabled={isSubmitting}>
         {isSubmitting ? 'Збереження...' : 'Зберегти запис'}

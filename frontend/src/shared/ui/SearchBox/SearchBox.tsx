@@ -1,3 +1,4 @@
+import { Input } from '../Input';
 import styles from './SearchBox.module.css';
 
 type SearchBoxProps = {
@@ -9,7 +10,7 @@ type SearchBoxProps = {
 export function SearchBox({ value, onChange, placeholder = 'Пошук...' }: SearchBoxProps) {
   return (
     <div className={styles.searchBox}>
-      <input
+      <Input
         type="search"
         value={value}
         placeholder={placeholder}
