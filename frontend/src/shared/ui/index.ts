@@ -8,5 +8,6 @@ export * from './Select';
 export * from './Textarea';
 export * from './Checkbox';
 export * from './Switch';
+export * from './RadioGroup';
 
 export * from './FormField';
