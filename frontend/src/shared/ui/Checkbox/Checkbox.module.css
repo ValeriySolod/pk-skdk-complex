@@ -1,0 +1,88 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.controlRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.checkbox {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    margin: 1px 0 0;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    background-color: #ffffff;
+    color: #2563eb;
+    cursor: pointer;
+    accent-color: #2563eb;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background-color 0.15s ease;
+}
+
+.checkbox:hover:not(:disabled) {
+    border-color: #94a3b8;
+}
+
+.checkbox:focus-visible {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 15%);
+}
+
+.checkbox:checked {
+    border-color: #2563eb;
+    background-color: #2563eb;
+}
+
+.checkbox:disabled {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.label {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #334155;
+    cursor: pointer;
+}
+
+.required {
+    color: #dc2626;
+}
+
+.helper {
+    margin: 0 0 0 26px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.error {
+    margin: 0 0 0 26px;
+    font-size: 13px;
+    color: #dc2626;
+}
+
+.errorState {
+    border-color: #dc2626;
+}
+
+.errorState:focus-visible {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgb(220 38 38 / 15%);
+}
+
+.disabled .label,
+.disabled .helper {
+    color: #94a3b8;
+    cursor: not-allowed;
+}
