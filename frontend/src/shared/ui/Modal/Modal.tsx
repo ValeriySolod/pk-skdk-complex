@@ -1,4 +1,4 @@
-import { useEffect, useId, type ReactNode } from 'react';
+import { useEffect, useId, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import styles from './Modal.module.css';
@@ -77,7 +77,7 @@ export function Modal({
     return null;
   }
 
-  const handleOverlayMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleOverlayMouseDown = (event: MouseEvent<HTMLDivElement>) => {
     if (closeOnOverlayClick && event.target === event.currentTarget) {
       onClose();
     }
