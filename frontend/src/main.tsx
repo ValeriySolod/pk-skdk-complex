@@ -7,6 +7,7 @@ import { modules } from './app/moduleRegistry';
 import LoginPage from './pages/LoginPage/LoginPage';
 import { getMe, logout, type User } from './api/auth';
 import { getToken } from './api/client';
+import { IncomingRegistryPage } from './modules/registries/pages/IncomingRegistryPage';
 
 const router = createBrowserRouter([
   {
@@ -18,6 +19,10 @@ const router = createBrowserRouter([
         path,
         element: <Component />,
       })),
+      {
+        path: '/registries/incoming',
+        element: <IncomingRegistryPage />,
+      },
     ],
   },
 ]);
