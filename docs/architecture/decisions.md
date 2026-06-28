@@ -29,3 +29,9 @@ Reason:
 - Easier review.
 - Easier rollback.
 - Lower risk of broken builds.
+
+## Architecture Decision Records
+
+Detailed ADRs are stored in [`adr/`](adr/).
+
+- [ADR-001 — Shared UI Component Location and Standards](adr/ADR-001-shared-ui.md)
