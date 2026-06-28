@@ -1,0 +1,75 @@
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.required {
+    color: #dc2626;
+}
+
+.textarea {
+    width: 100%;
+    min-height: 96px;
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #0f172a;
+    font: inherit;
+    line-height: 1.4;
+    resize: vertical;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background-color 0.15s ease;
+}
+
+.textarea:hover:not(:disabled):not(:read-only) {
+    border-color: #94a3b8;
+}
+
+.textarea:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 15%);
+}
+
+.textarea:disabled {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.textarea:read-only:not(:disabled) {
+    background-color: #f8fafc;
+    color: #475569;
+    cursor: default;
+}
+
+.error {
+    border-color: #dc2626;
+}
+
+.error:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgb(220 38 38 / 15%);
+}
+
+.helperText {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.errorText {
+    margin: 0;
+    font-size: 13px;
+    color: #dc2626;
+}
