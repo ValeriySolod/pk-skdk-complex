@@ -1,0 +1,115 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.controlRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.switch {
+    position: relative;
+    width: 42px;
+    height: 24px;
+    flex: 0 0 auto;
+    margin: 0;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    appearance: none;
+    background-color: #cbd5e1;
+    cursor: pointer;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background-color 0.15s ease;
+}
+
+.switch::before {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 20%);
+    content: '';
+    transition: transform 0.15s ease;
+}
+
+.switch:hover:not(:disabled) {
+    border-color: #94a3b8;
+}
+
+.switch:focus-visible {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 15%);
+}
+
+.switch:checked {
+    border-color: #2563eb;
+    background-color: #2563eb;
+}
+
+.switch:checked::before {
+    transform: translateX(18px);
+}
+
+.switch:disabled {
+    border-color: #e2e8f0;
+    background-color: #e2e8f0;
+    cursor: not-allowed;
+}
+
+.switch:disabled::before {
+    background-color: #f8fafc;
+    box-shadow: none;
+}
+
+.label {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #334155;
+    cursor: pointer;
+}
+
+.required {
+    color: #dc2626;
+}
+
+.helper {
+    margin: 0 0 0 52px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.error {
+    margin: 0 0 0 52px;
+    font-size: 13px;
+    color: #dc2626;
+}
+
+.errorState {
+    border-color: #dc2626;
+}
+
+.errorState:focus-visible {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgb(220 38 38 / 15%);
+}
+
+.errorState:checked {
+    border-color: #dc2626;
+    background-color: #dc2626;
+}
+
+.disabled .label,
+.disabled .helper {
+    color: #94a3b8;
+    cursor: not-allowed;
+}
