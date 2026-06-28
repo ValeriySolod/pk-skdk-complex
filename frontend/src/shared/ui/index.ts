@@ -1,5 +1,6 @@
 export { Button } from './Button/Button';
-export { Card } from './Card/Card';
+export { Card } from './Card';
+export type { CardProps } from './Card';
 export { PageHeader } from './PageHeader/PageHeader';
 export { SearchBox } from './SearchBox/SearchBox';
 export { Loader } from './Loader/Loader';
