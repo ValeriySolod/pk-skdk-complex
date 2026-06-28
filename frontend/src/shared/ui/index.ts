@@ -13,5 +13,6 @@ export * from './Modal';
 export * from './Tabs';
 export * from './Toast';
 export * from './Table';
+export * from './Pagination';
 
 export * from './FormField';
