@@ -11,5 +11,6 @@ export * from './Switch';
 export * from './RadioGroup';
 export * from './Modal';
 export * from './Tabs';
+export * from './Toast';
 
 export * from './FormField';
