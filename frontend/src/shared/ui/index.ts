@@ -10,5 +10,6 @@ export * from './Checkbox';
 export * from './Switch';
 export * from './RadioGroup';
 export * from './Modal';
+export * from './Tabs';
 
 export * from './FormField';
