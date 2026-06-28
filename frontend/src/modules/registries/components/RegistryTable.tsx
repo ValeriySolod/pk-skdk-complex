@@ -1,3 +1,4 @@
+import { StatusBadge } from '../../../shared/components';
 import type { RegistryRecord } from '../types';
 import css from '../RegistriesPage.module.css';
 
@@ -31,7 +32,7 @@ export function RegistryTable({ items }: RegistryTableProps) {
               <td>ID: {item.sender_org_id}</td>
               <td>{item.qr_payload || '—'}</td>
               <td>
-                <span className={css.status}>{item.status}</span>
+                <StatusBadge status={item.status} />
               </td>
             </tr>
           ))}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Button } from '../../../shared/components';
 import type { CreateRegistryPayload } from '../types';
 import css from '../RegistriesPage.module.css';
 
@@ -63,9 +64,9 @@ export function RegistryForm({ onSubmit }: RegistryFormProps) {
         />
       </label>
 
-      <button type="submit" disabled={isSubmitting}>
+      <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? 'Збереження...' : 'Зберегти запис'}
-      </button>
+      </Button>
     </form>
   );
 }

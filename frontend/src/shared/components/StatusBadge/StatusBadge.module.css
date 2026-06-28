@@ -31,3 +31,13 @@
     background: #f3f4f6;
     color: #374151;
 }
+
+.active {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.planned {
+    background: #fffbeb;
+    color: #b45309;
+}

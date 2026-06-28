@@ -1,3 +1,4 @@
+import { PageHeader } from '../../shared/components';
 import { RegistryCard } from './components/RegistryCard';
 import css from './RegistriesPage.module.css';
 import type { RegistryItem } from './types';
@@ -36,15 +37,11 @@ const registryItems: RegistryItem[] = [
 export function RegistriesPage() {
   return (
     <section className={css.page}>
-      <div className={css.header}>
-        <div>
-          <p className={css.eyebrow}>ПК СКДК</p>
-          <h2 className={css.title}>Реєстри</h2>
-          <p className={css.subtitle}>
-            Створення та ведення реєстраційних карток кореспонденції.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="ПК СКДК"
+        title="Реєстри"
+        description="Створення та ведення реєстраційних карток кореспонденції."
+      />
 
       <div className={css.grid}>
         {registryItems.map((item) => (

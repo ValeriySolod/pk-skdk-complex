@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { StatusBadge } from '../../../shared/components';
 import css from '../RegistriesPage.module.css';
 import type { RegistryItem } from '../types';
 
@@ -11,9 +12,7 @@ export function RegistryCard({ item }: RegistryCardProps) {
     <Link to={item.path} className={css.card}>
       <div className={css.cardHeader}>
         <h3 className={css.cardTitle}>{item.title}</h3>
-        <span className={css.badge}>
-          {item.status === 'active' ? 'Активний' : 'Планується'}
-        </span>
+        <StatusBadge status={item.status} />
       </div>
 
       <p className={css.cardText}>{item.description}</p>
