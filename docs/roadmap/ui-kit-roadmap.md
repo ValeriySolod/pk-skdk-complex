@@ -67,9 +67,9 @@ implementation
 | ID | Component | Status |
 |----|-----------|--------|
 | UI-029 | Avatar | ✅ |
-| UI-030 | Divider | ⬜ |
+| UI-030 | Divider | ✅ |
 | UI-031 | Accordion | ⬜ |
-| UI-032 | Collapse | ⬜ |
+| UI-032 | Avatar | ✅ |
 | UI-033 | List | ⬜ |
 | UI-034 | Menu | ⬜ |
 | UI-035 | ContextMenu | ⬜ |

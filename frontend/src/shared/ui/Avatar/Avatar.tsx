@@ -1,22 +1,20 @@
-import type { HTMLAttributes } from 'react';
-import { useEffect, useMemo, useState } from 'react';
-import clsx from 'clsx';
 import styles from './Avatar.module.css';
 
-export type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
-export type AvatarShape = 'circle' | 'rounded' | 'square';
+export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
-export interface AvatarProps extends HTMLAttributes<HTMLSpanElement> {
+export interface AvatarProps {
   src?: string;
   alt?: string;
   name?: string;
-  initials?: string;
   size?: AvatarSize;
-  shape?: AvatarShape;
+  rounded?: boolean;
+  className?: string;
 }
 
 function getInitials(name?: string) {
-  if (!name) return '';
+  if (!name?.trim()) {
+    return '?';
+  }
 
   return name
     .trim()
@@ -25,57 +23,41 @@ function getInitials(name?: string) {
     .slice(0, 2)
     .map((word) => word[0])
     .join('')
-    .toUpperCase();
+    .toUpperCase() || '?';
 }
 
-function getFallbackText(initials?: string, name?: string) {
-  const value = initials?.trim();
-
-  if (value) return value.slice(0, 2).toUpperCase();
-
-  return getInitials(name) || '?';
+function getClassName(size: AvatarSize, rounded: boolean, className?: string) {
+  return [
+    styles.avatar,
+    styles[size],
+    rounded ? styles.rounded : styles.softRounded,
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
 export function Avatar({
   src,
   alt,
   name,
-  initials,
   size = 'md',
-  shape = 'circle',
+  rounded = true,
   className,
-  ...props
 }: AvatarProps) {
-  const [imageFailed, setImageFailed] = useState(false);
-
-  useEffect(() => {
-    setImageFailed(false);
-  }, [src]);
-
-  const fallbackText = useMemo(
-    () => getFallbackText(initials, name),
-    [initials, name],
-  );
-
-  const hasImage = Boolean(src && !imageFailed);
-  const accessibleLabel = alt ?? name ?? fallbackText;
+  const avatarClassName = getClassName(size, rounded, className);
+  const fallbackLabel = name ?? 'Avatar';
 
   return (
     <span
-      className={clsx(styles.avatar, styles[size], styles[shape], className)}
-      {...(!hasImage ? { role: 'img', 'aria-label': accessibleLabel } : {})}
-      {...props}
+      className={avatarClassName}
+      {...(!src ? { role: 'img', 'aria-label': fallbackLabel } : {})}
     >
-      {hasImage ? (
-        <img
-          className={styles.image}
-          src={src}
-          alt={alt ?? name ?? ''}
-          onError={() => setImageFailed(true)}
-        />
+      {src ? (
+        <img className={styles.image} src={src} alt={alt ?? name ?? 'Avatar'} />
       ) : (
-        <span className={styles.fallback} aria-hidden="true">
-          {fallbackText}
+        <span className={styles.initials} aria-hidden="true">
+          {getInitials(name)}
         </span>
       )}
     </span>
