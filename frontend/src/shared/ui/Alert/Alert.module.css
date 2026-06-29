@@ -1,0 +1,103 @@
+.alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.info {
+    border-color: #bae6fd;
+    background: #f0f9ff;
+    color: #075985;
+}
+
+.success {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.warning {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.danger {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
+}
+
+.icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.content {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.title {
+    margin: 0;
+    color: inherit;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.message {
+    color: inherit;
+}
+
+.title + .message {
+    margin-top: 4px;
+}
+
+.message p {
+    margin: 0;
+}
+
+.message p + p {
+    margin-top: 8px;
+}
+
+.action {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-end;
+    margin-left: auto;
+}
+
+@media (max-width: 640px) {
+    .alert {
+        flex-wrap: wrap;
+        padding: 12px 14px;
+    }
+
+    .content {
+        flex-basis: calc(100% - 34px);
+    }
+
+    .action {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 34px;
+    }
+}
