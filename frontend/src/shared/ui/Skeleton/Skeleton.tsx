@@ -1,17 +1,21 @@
+import type { CSSProperties } from 'react';
+
 import styles from './Skeleton.module.css';
 
-type SkeletonVariant = 'text' | 'rect' | 'circle';
+export type SkeletonVariant = 'text' | 'rectangular' | 'rounded' | 'circle';
 
-type SkeletonProps = {
+export interface SkeletonProps {
   variant?: SkeletonVariant;
   width?: string | number;
   height?: string | number;
   lines?: number;
   animated?: boolean;
   className?: string;
-};
+  'aria-label'?: string;
+}
 
-const DEFAULT_TEXT_HEIGHT = '1rem';
+const DEFAULT_TEXT_HEIGHT = '1em';
+const DEFAULT_LINE_GAP = 8;
 
 function toCssSize(value: string | number | undefined): string | undefined {
   if (typeof value === 'number') {
@@ -29,39 +33,66 @@ function getLineCount(lines: number | undefined): number {
   return Math.max(1, Math.floor(lines));
 }
 
+function buildClassName(...classes: Array<string | undefined>): string {
+  return classes.filter(Boolean).join(' ');
+}
+
 export function Skeleton({
-  variant = 'rect',
+  variant = 'text',
   width,
   height,
   lines = 1,
   animated = true,
   className,
+  'aria-label': ariaLabel,
 }: SkeletonProps) {
-  const classes = [
+  const lineCount = getLineCount(lines);
+  const skeletonClassName = buildClassName(
     styles.skeleton,
     styles[variant],
     animated ? styles.animated : undefined,
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
-  const style = {
+    lineCount === 1 ? className : undefined,
+  );
+  const skeletonStyle: CSSProperties = {
     width: toCssSize(width),
     height: toCssSize(height ?? (variant === 'text' ? DEFAULT_TEXT_HEIGHT : undefined)),
   };
 
-  if (variant === 'text') {
+  if (lineCount > 1) {
+    const groupStyle: CSSProperties = {
+      width: toCssSize(width),
+      gap: DEFAULT_LINE_GAP,
+    };
+
     return (
-      <span className={styles.textGroup} aria-hidden="true">
-        {Array.from({ length: getLineCount(lines) }, (_, index) => (
-          <span key={index} className={classes} style={style} />
+      <span
+        className={buildClassName(styles.group, className)}
+        style={groupStyle}
+        role={ariaLabel ? 'status' : undefined}
+        aria-label={ariaLabel}
+        aria-hidden={ariaLabel ? undefined : true}
+      >
+        {Array.from({ length: lineCount }, (_, index) => (
+          <span
+            key={index}
+            className={skeletonClassName}
+            style={{
+              ...skeletonStyle,
+              width: variant === 'text' && index === lineCount - 1 ? '80%' : skeletonStyle.width,
+            }}
+          />
         ))}
       </span>
     );
   }
 
-  return <span className={classes} style={style} aria-hidden="true" />;
+  return (
+    <span
+      className={skeletonClassName}
+      style={skeletonStyle}
+      role={ariaLabel ? 'status' : undefined}
+      aria-label={ariaLabel}
+      aria-hidden={ariaLabel ? undefined : true}
+    />
+  );
 }
-
-export type { SkeletonProps, SkeletonVariant };
