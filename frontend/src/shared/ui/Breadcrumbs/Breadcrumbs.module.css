@@ -22,17 +22,18 @@
     min-width: 0;
 }
 
-.separator {
+.link,
+.current {
     display: inline-flex;
     align-items: center;
-    margin: 0 8px;
-    color: #94a3b8;
-    user-select: none;
+    min-width: 0;
 }
 
 .link {
+    border-radius: 4px;
     color: #2563eb;
     text-decoration: none;
+
     transition: color .2s ease;
 }
 
@@ -44,10 +45,18 @@
 .link:focus-visible {
     outline: 2px solid #2563eb;
     outline-offset: 2px;
-    border-radius: 4px;
 }
 
 .current {
     color: #0f172a;
     font-weight: 600;
+}
+
+.separator {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    margin: 0 8px;
+    color: #94a3b8;
+    user-select: none;
 }
