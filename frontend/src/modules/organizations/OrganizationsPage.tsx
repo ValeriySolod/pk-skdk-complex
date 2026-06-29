@@ -251,7 +251,7 @@ export function OrganizationsPage() {
               {filteredOrganizations.length === 0 && (
                 <tr>
                   <td colSpan={7}>
-                    <EmptyState text="Організацій не знайдено" />
+                    <EmptyState title="Організацій не знайдено" />
                   </td>
                 </tr>
               )}
