@@ -22,4 +22,8 @@ export * from './Breadcrumbs';
 export * from './Skeleton';
 export * from './LoadingOverlay';
 export * from './Alert';
+
 export * from './Notification';
+
+export * from './Banner';
+
