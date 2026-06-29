@@ -1,0 +1,66 @@
+.divider {
+    --divider-color: #d1d5db;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.horizontal {
+    width: 100%;
+    border-top: 1px solid var(--divider-color);
+}
+
+.vertical {
+    align-self: stretch;
+    width: 0;
+    min-height: 1rem;
+    border-left: 1px solid var(--divider-color);
+}
+
+.solid {
+    border-style: solid;
+}
+
+.dashed {
+    border-style: dashed;
+}
+
+.dotted {
+    border-style: dotted;
+}
+
+.withLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    border-top: 0;
+}
+
+.line {
+    flex: 1 1 0;
+    min-width: 0;
+    border-top: 1px solid var(--divider-color);
+}
+
+.solid .line {
+    border-top-style: solid;
+}
+
+.dashed .line {
+    border-top-style: dashed;
+}
+
+.dotted .line {
+    border-top-style: dotted;
+}
+
+.label {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    color: #64748b;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    text-align: center;
+}
