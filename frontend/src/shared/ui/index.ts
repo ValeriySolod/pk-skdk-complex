@@ -30,3 +30,4 @@ export * from './Stepper';
 export * from './ProgressBar';
 export * from './Avatar';
 export * from './Divider';
+export * from './Accordion';
