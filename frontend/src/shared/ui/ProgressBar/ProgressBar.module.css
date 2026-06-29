@@ -1,0 +1,65 @@
+.progressBar {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.header {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.label {
+    min-width: 0;
+    overflow: hidden;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.value {
+    flex: 0 0 auto;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.track {
+    width: 100%;
+    min-width: 0;
+    height: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e2e8f0;
+}
+
+.fill {
+    height: 100%;
+    border-radius: inherit;
+    transition: width 180ms ease;
+}
+
+.default {
+    background: #2563eb;
+}
+
+.success {
+    background: #16a34a;
+}
+
+.warning {
+    background: #d97706;
+}
+
+.danger {
+    background: #dc2626;
+}
