@@ -70,7 +70,7 @@ implementation
 | UI-030 | Divider | ✅ |
 | UI-031 | Accordion | ⬜ |
 | UI-032 | Avatar | ✅ |
-| UI-033 | List | ⬜ |
+| UI-033 | Universal Spacer | ✅ |
 | UI-034 | Menu | ⬜ |
 | UI-035 | ContextMenu | ⬜ |
 | UI-036 | TreeView | ⬜ |
