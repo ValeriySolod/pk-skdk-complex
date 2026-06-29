@@ -66,7 +66,7 @@ implementation
 
 | ID | Component | Status |
 |----|-----------|--------|
-| UI-029 | Avatar | ⬜ |
+| UI-029 | Avatar | ✅ |
 | UI-030 | Divider | ⬜ |
 | UI-031 | Accordion | ⬜ |
 | UI-032 | Collapse | ⬜ |
