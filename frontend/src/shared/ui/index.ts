@@ -33,3 +33,4 @@ export * from './Divider';
 export * from './Accordion';
 export * from './Spacer';
 export * from './Grid';
+export * from './Flex';
