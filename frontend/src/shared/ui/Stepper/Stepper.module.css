@@ -1,0 +1,172 @@
+.stepper {
+    width: 100%;
+    color: #334155;
+}
+
+.list {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.horizontal .list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    row-gap: 20px;
+}
+
+.vertical .list {
+    flex-direction: column;
+}
+
+.item {
+    position: relative;
+    display: flex;
+    min-width: 0;
+}
+
+.horizontal .item {
+    flex: 1 1 180px;
+    align-items: flex-start;
+    padding-right: 24px;
+}
+
+.vertical .item {
+    align-items: flex-start;
+    padding-bottom: 24px;
+}
+
+.item:last-child {
+    padding-right: 0;
+    padding-bottom: 0;
+}
+
+.horizontal .item:not(:last-child)::after,
+.vertical .item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    background: #cbd5e1;
+}
+
+.horizontal .item:not(:last-child)::after {
+    top: 16px;
+    right: 8px;
+    left: 40px;
+    height: 2px;
+}
+
+.vertical .item:not(:last-child)::after {
+    top: 40px;
+    bottom: 8px;
+    left: 15px;
+    width: 2px;
+}
+
+.marker {
+    z-index: 1;
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 2px solid #cbd5e1;
+    border-radius: 999px;
+    background: #fff;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.content {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 4px;
+    padding-left: 12px;
+}
+
+.status {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.label {
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.description {
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.completed .marker {
+    border-color: #16a34a;
+    background: #16a34a;
+    color: #fff;
+}
+
+.completed:not(:last-child)::after {
+    background: #16a34a;
+}
+
+.current .marker {
+    border-color: #2563eb;
+    background: #dbeafe;
+    color: #1d4ed8;
+    box-shadow: 0 0 0 4px #dbeafe;
+}
+
+.current .status,
+.current .label {
+    color: #1d4ed8;
+}
+
+.error .marker {
+    border-color: #dc2626;
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.error .status,
+.error .label {
+    color: #b91c1c;
+}
+
+.upcoming .label {
+    color: #475569;
+}
+
+@media (max-width: 640px) {
+    .horizontal .list {
+        flex-direction: column;
+        flex-wrap: nowrap;
+    }
+
+    .horizontal .item {
+        padding-right: 0;
+        padding-bottom: 24px;
+    }
+
+    .horizontal .item:last-child {
+        padding-bottom: 0;
+    }
+
+    .horizontal .item:not(:last-child)::after {
+        top: 40px;
+        bottom: 8px;
+        left: 15px;
+        width: 2px;
+        height: auto;
+    }
+}
