@@ -21,3 +21,4 @@ export * from './DropdownMenu';
 export * from './Breadcrumbs';
 export * from './Skeleton';
 export * from './LoadingOverlay';
+export * from './Alert';
