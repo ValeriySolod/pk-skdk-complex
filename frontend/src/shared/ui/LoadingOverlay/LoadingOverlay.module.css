@@ -1,0 +1,56 @@
+.overlay {
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    padding: 24px;
+    color: #334155;
+    text-align: center;
+}
+
+.contained {
+    position: absolute;
+    border-radius: inherit;
+}
+
+.fullScreen {
+    position: fixed;
+    z-index: 1100;
+}
+
+.backdrop {
+    background-color: rgb(248 250 252 / 78%);
+    backdrop-filter: blur(2px);
+}
+
+.spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #dbeafe;
+    border-top-color: #2563eb;
+    border-radius: 999px;
+    animation: spin 0.8s linear infinite;
+}
+
+.label {
+    max-width: min(100%, 320px);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #475569;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spinner {
+        animation-duration: 1.6s;
+    }
+}
