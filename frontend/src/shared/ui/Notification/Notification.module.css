@@ -1,0 +1,135 @@
+.notification {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 10px 28px rgb(15 23 42 / 8%);
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.info {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #1e40af;
+}
+
+.success {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.warning {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.danger {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.icon {
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    color: currentcolor;
+}
+
+.icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.content {
+    min-width: 0;
+    color: inherit;
+}
+
+.title {
+    margin: 0;
+    color: inherit;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.message {
+    margin: 0;
+    color: color-mix(in srgb, currentcolor 82%, #0f172a);
+}
+
+.title + .message {
+    margin-top: 3px;
+}
+
+.action {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-end;
+    margin-left: 4px;
+}
+
+.closeButton {
+    display: inline-flex;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    margin: -2px -4px -2px 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: currentcolor;
+    cursor: pointer;
+    font: inherit;
+    font-size: 22px;
+    line-height: 1;
+    opacity: 0.72;
+    transition:
+        background-color 0.15s ease,
+        box-shadow 0.15s ease,
+        opacity 0.15s ease;
+}
+
+.closeButton:hover {
+    background: rgb(15 23 42 / 8%);
+    opacity: 1;
+}
+
+.closeButton:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 22%);
+    opacity: 1;
+}
+
+@media (max-width: 520px) {
+    .notification {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .action {
+        grid-column: 2 / -1;
+        justify-content: flex-start;
+        margin-left: 0;
+    }
+
+    .closeButton {
+        grid-column: 3;
+        grid-row: 1;
+    }
+}
