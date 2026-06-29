@@ -17,3 +17,4 @@ export * from './Pagination';
 export * from './Badge';
 export * from './FormField';
 export * from './Tooltip';
+export * from './DropdownMenu';
