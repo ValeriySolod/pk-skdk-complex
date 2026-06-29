@@ -20,3 +20,4 @@ export * from './Tooltip';
 export * from './DropdownMenu';
 export * from './Breadcrumbs';
 export * from './Skeleton';
+export * from './LoadingOverlay';
