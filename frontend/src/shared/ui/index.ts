@@ -18,3 +18,4 @@ export * from './Badge';
 export * from './FormField';
 export * from './Tooltip';
 export * from './DropdownMenu';
+export * from './Breadcrumbs';
