@@ -1,26 +1,38 @@
 .skeleton {
     display: block;
-    background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 37%, #e2e8f0 63%);
-    background-size: 400% 100%;
+    overflow: hidden;
+    min-width: 0;
+    background-color: #e2e8f0;
+    background-image: linear-gradient(90deg, #e2e8f0 0%, #f8fafc 50%, #e2e8f0 100%);
+    background-repeat: no-repeat;
+    background-size: 200% 100%;
 }
 
 .animated {
-    animation: skeleton-pulse 1.4s ease-in-out infinite;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }
 
-.textGroup {
-    display: grid;
-    gap: 8px;
-    width: 100%;
+.group {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .text {
     width: 100%;
-    min-height: 1rem;
-    border-radius: 999px;
+    min-height: 1em;
+    border-radius: 9999px;
+    transform: scaleY(0.72);
+    transform-origin: center left;
 }
 
-.rect {
+.rectangular {
+    width: 100%;
+    min-height: 24px;
+    border-radius: 0;
+}
+
+.rounded {
     width: 100%;
     min-height: 24px;
     border-radius: 12px;
@@ -29,7 +41,7 @@
 .circle {
     width: 40px;
     height: 40px;
-    border-radius: 50%;
+    border-radius: 9999px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -38,12 +50,12 @@
     }
 }
 
-@keyframes skeleton-pulse {
+@keyframes skeleton-shimmer {
     0% {
-        background-position: 100% 50%;
+        background-position: 200% 0;
     }
 
     100% {
-        background-position: 0 50%;
+        background-position: -200% 0;
     }
 }
