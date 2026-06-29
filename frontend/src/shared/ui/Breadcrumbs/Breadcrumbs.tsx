@@ -1,12 +1,11 @@
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import styles from './Breadcrumbs.module.css';
 
 export interface BreadcrumbItem {
-  label: ReactNode;
+  label: string;
   href?: string;
-  isCurrent?: boolean;
+  current?: boolean;
 }
 
 export interface BreadcrumbsProps {
@@ -20,29 +19,35 @@ export function Breadcrumbs({
   separator = '/',
   className,
 }: BreadcrumbsProps) {
+  if (items.length === 0) {
+    return null;
+  }
+
   return (
     <nav className={clsx(styles.breadcrumbs, className)} aria-label="Breadcrumb">
       <ol className={styles.list}>
         {items.map((item, index) => {
-          const isCurrent = item.isCurrent || index === items.length - 1;
-          const content = item.href && !isCurrent ? (
-            <Link className={styles.link} to={item.href}>
-              {item.label}
-            </Link>
-          ) : (
-            <span className={styles.current} aria-current={isCurrent ? 'page' : undefined}>
-              {item.label}
-            </span>
-          );
+          const isLast = index === items.length - 1;
+          const isCurrent = item.current || isLast;
+          const key = `${item.label}-${item.href ?? index}`;
 
           return (
-            <li className={styles.item} key={`${index}-${item.href ?? 'breadcrumb'}`}>
-              {index > 0 && (
+            <li className={styles.item} key={key}>
+              {item.href && !isCurrent ? (
+                <a className={styles.link} href={item.href}>
+                  {item.label}
+                </a>
+              ) : (
+                <span className={styles.current} aria-current="page">
+                  {item.label}
+                </span>
+              )}
+
+              {!isLast && (
                 <span className={styles.separator} aria-hidden="true">
                   {separator}
                 </span>
               )}
-              {content}
             </li>
           );
         })}
