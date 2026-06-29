@@ -1,0 +1,49 @@
+.skeleton {
+    display: block;
+    background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 37%, #e2e8f0 63%);
+    background-size: 400% 100%;
+}
+
+.animated {
+    animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.textGroup {
+    display: grid;
+    gap: 8px;
+    width: 100%;
+}
+
+.text {
+    width: 100%;
+    min-height: 1rem;
+    border-radius: 999px;
+}
+
+.rect {
+    width: 100%;
+    min-height: 24px;
+    border-radius: 12px;
+}
+
+.circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animated {
+        animation: none;
+    }
+}
+
+@keyframes skeleton-pulse {
+    0% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0 50%;
+    }
+}
