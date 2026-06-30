@@ -83,7 +83,7 @@ implementation
 | UI-043 | Tooltip | ✅ |
 | UI-044 | Combobox | ✅ |
 | UI-045 | MultiSelect | ✅ |
-| UI-046 | Timeline | ⬜ |
+| UI-046 | Timeline | ✅ |
 | UI-047 | AvatarGroup | ⬜ |
 | UI-048 | Statistic | ⬜ |
 | UI-049 | DataGrid | ⬜ |

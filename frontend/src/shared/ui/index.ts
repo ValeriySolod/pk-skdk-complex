@@ -42,3 +42,4 @@ export * from './Container';
 export * from './Calendar';
 export * from './Slider';
 export * from './Timeline';
+export * from './Carousel';
