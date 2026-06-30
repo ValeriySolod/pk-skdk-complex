@@ -1,4 +1,3 @@
-docs/roadmap/ui-kit-roadmap.md
 # UI Kit Roadmap
 
 ## Purpose
@@ -33,7 +32,6 @@ implementation
 |----|-----------|--------|
 | UI-001 | Card | ✅ |
 | UI-002 | Button | ✅ |
-| UI-003 | Input | ✅ |
 | UI-004 | Select | ✅ |
 | UI-005 | Textarea | ✅ |
 | UI-006 | FormField | ✅ |
@@ -59,6 +57,23 @@ implementation
 | UI-026 | Breadcrumbs | ✅ |
 | UI-027 | Stepper | ✅ |
 | UI-028 | ProgressBar | ✅ |
+| UI-029 | Avatar | ✅ |
+| UI-030 | Divider | ✅ |
+| UI-031 | Accordion | ✅ |
+| UI-032 | Spacer | ✅ |
+| UI-038 | Wrap | ✅ |
+| UI-039 | Calendar | ✅ |
+| UI-040 | Slider | ✅ |
+| UI-042 | MultiSelect | ✅ |
+| UI-043 | Popover | ✅ |
+| UI-044 | Timeline | ✅ |
+| UI-045 | Container | ✅ |
+| UI-046 | Grid | ✅ |
+| UI-047 | Carousel | ✅ |
+| UI-048 | Statistic | ✅ |
+| UI-052 | SearchBox | ✅ |
+| UI-053 | Flex | ✅ |
+| UI-054 | Inline | ✅ |
 
 ---
 
@@ -66,25 +81,13 @@ implementation
 
 | ID | Component | Status |
 |----|-----------|--------|
-| UI-029 | Avatar | ✅ |
-| UI-030 | Divider | ✅ |
-| UI-031 | Accordion | ✅ |
-| UI-032 | Avatar | ✅ |
-| UI-033 | Universal Spacer | ✅ |
-| UI-034 | Menu | ✅ |
-| UI-035 | ContextMenu | ✅ |
-| UI-036 | TreeView | ✅ |
-| UI-037 | FileUpload | ✅|
-| UI-038 | DatePicker | ✅ |
-| UI-039 | Wrap | ✅ |
-| UI-040 | Calendar | ✅ |
-| UI-041 | Slider | ✅ |
-| UI-042 | Tabs | ✅ |
-| UI-043 | Tooltip | ✅ |
-| UI-044 | Combobox | ✅ |
-| UI-045 | MultiSelect | ✅ |
-| UI-046 | Timeline | ✅ |
-| UI-047 | AvatarGroup | ⬜ |
-| UI-048 | Statistic | ✅ |
+| UI-003 | Input | ⬜ |
+| UI-033 | Menu | ⬜ |
+| UI-034 | ContextMenu | ⬜ |
+| UI-035 | TreeView | ⬜ |
+| UI-036 | FileUpload | ⬜ |
+| UI-037 | DatePicker | ⬜ |
+| UI-041 | Combobox | ⬜ |
 | UI-049 | DataGrid | ⬜ |
 | UI-050 | AppShell | ⬜ |
+| UI-051 | AvatarGroup | ⬜ |

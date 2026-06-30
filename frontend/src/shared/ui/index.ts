@@ -1,5 +1,5 @@
-export { Button } from './Button/Button';
-export { Card } from './Card/Card';
+export * from './Button';
+export * from './Card';
 export { PageHeader } from './PageHeader/PageHeader';
 export { SearchBox } from './SearchBox/SearchBox';
 export { Loader } from './Loader/Loader';
