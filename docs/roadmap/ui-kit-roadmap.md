@@ -62,6 +62,7 @@ implementation
 | UI-030 | Divider | ✅ |
 | UI-031 | Accordion | ✅ |
 | UI-032 | Spacer | ✅ |
+| UI-033 | Menu | ✅ |
 | UI-038 | Wrap | ✅ |
 | UI-039 | Calendar | ✅ |
 | UI-040 | Slider | ✅ |
@@ -83,7 +84,6 @@ implementation
 
 | ID | Component | Status |
 |----|-----------|--------|
-| UI-033 | Menu | ⬜ |
 | UI-034 | ContextMenu | ⬜ |
 | UI-035 | TreeView | ⬜ |
 | UI-036 | FileUpload | ⬜ |
