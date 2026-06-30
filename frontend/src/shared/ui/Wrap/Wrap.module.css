@@ -1,0 +1,44 @@
+.wrap {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.none {
+    gap: 0;
+}
+
+.xs {
+    gap: 4px;
+}
+
+.sm {
+    gap: 8px;
+}
+
+.md {
+    gap: 16px;
+}
+
+.lg {
+    gap: 24px;
+}
+
+.xl {
+    gap: 32px;
+}
+
+.start {
+    align-items: flex-start;
+}
+
+.center {
+    align-items: center;
+}
+
+.end {
+    align-items: flex-end;
+}
+
+.stretch {
+    align-items: stretch;
+}
