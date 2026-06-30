@@ -78,7 +78,7 @@ implementation
 | UI-038 | DatePicker | ✅ |
 | UI-039 | Wrap | ✅ |
 | UI-040 | Calendar | ✅ |
-| UI-041 | Slider | ⬜ |
+| UI-041 | Slider | ✅ |
 | UI-042 | Rating | ⬜ |
 | UI-043 | Autocomplete | ⬜ |
 | UI-044 | Combobox | ⬜ |
