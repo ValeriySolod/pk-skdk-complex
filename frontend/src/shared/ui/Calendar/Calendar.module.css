@@ -1,0 +1,159 @@
+.calendar {
+  width: 100%;
+  max-width: 336px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.disabled {
+  opacity: 0.72;
+}
+
+.header {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.monthLabel {
+  min-width: 0;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.navButton {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  font: inherit;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.navButton:hover:not(:disabled) {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.navButton:focus-visible,
+.dayButton:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.28);
+  outline-offset: 2px;
+}
+
+.navButton:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.grid {
+  width: 100%;
+  table-layout: fixed;
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+.weekday {
+  height: 30px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.weekday abbr {
+  text-decoration: none;
+}
+
+.dayCell {
+  width: 14.285%;
+  height: 42px;
+  padding: 2px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.dayButton {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #0f172a;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.dayButton:hover:not(:disabled) {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.dayButton:disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.outsideMonth {
+  color: #94a3b8;
+}
+
+.today {
+  border-color: #93c5fd;
+}
+
+.selected,
+.selected:hover:not(:disabled) {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+@media (max-width: 420px) {
+  .calendar {
+    max-width: none;
+    padding: 12px;
+  }
+
+  .dayCell {
+    height: 38px;
+    padding: 1px;
+  }
+
+  .dayButton {
+    width: 34px;
+    height: 34px;
+  }
+}
