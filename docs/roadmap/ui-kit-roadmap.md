@@ -90,4 +90,4 @@ implementation
 | UI-037 | DatePicker | ⬜ |
 | UI-041 | Combobox | ⬜ |
 | UI-049 | AppShell | ⬜ |
-| UI-051 | AvatarGroup | ⬜ |
+| UI-051 | AvatarGroup | ✅ |
