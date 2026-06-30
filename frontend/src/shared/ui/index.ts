@@ -21,6 +21,7 @@ export * from './FormField';
 export * from './Tooltip';
 export * from './Popover';
 export * from './DropdownMenu';
+export * from './Menu';
 export * from './Breadcrumbs';
 export * from './Skeleton';
 export * from './LoadingOverlay';
