@@ -44,3 +44,4 @@ export * from './Slider';
 export * from './Timeline';
 export * from './Carousel';
 export * from './Statistic';
+export * from './DataGrid';
