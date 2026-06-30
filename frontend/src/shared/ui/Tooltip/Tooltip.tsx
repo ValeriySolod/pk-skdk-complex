@@ -19,7 +19,7 @@ export type TooltipPlacement =
 
 export interface TooltipProps {
   content: ReactNode;
-  children: ReactElement;
+  children: ReactElement<TooltipTriggerProps>;
   placement?: TooltipPlacement;
   disabled?: boolean;
   className?: string;
@@ -49,7 +49,7 @@ export function Tooltip({
     return children;
   }
 
-  const trigger = children as ReactElement<TooltipTriggerProps>;
+  const trigger = children;
   const describedBy = trigger.props['aria-describedby']
     ? `${trigger.props['aria-describedby']} ${tooltipId}`
     : tooltipId;
@@ -91,7 +91,6 @@ export function Tooltip({
         onFocus: handleFocus,
         onBlur: handleBlur,
         onKeyDown: handleKeyDown,
-        tabIndex: trigger.props.tabIndex ?? 0,
       })}
 
       {isOpen && (
