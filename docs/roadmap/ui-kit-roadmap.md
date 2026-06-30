@@ -79,7 +79,7 @@ implementation
 | UI-039 | Wrap | ✅ |
 | UI-040 | Calendar | ✅ |
 | UI-041 | Slider | ✅ |
-| UI-042 | Rating | ⬜ |
+| UI-042 | Tabs | ✅ |
 | UI-043 | Autocomplete | ⬜ |
 | UI-044 | Combobox | ⬜ |
 | UI-045 | MultiSelect | ⬜ |

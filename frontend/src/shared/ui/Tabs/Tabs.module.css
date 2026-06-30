@@ -1,3 +1,7 @@
+.root {
+    min-width: 0;
+}
+
 .tabs {
     display: flex;
     min-width: 0;
@@ -7,6 +11,7 @@
 .tab {
     min-width: 0;
     border: 0;
+    border-radius: 6px 6px 0 0;
     font: inherit;
     font-weight: 600;
     line-height: 1.4;
@@ -26,22 +31,32 @@
 
 .tab:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgb(37 99 235 / 15%);
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 18%);
 }
 
 .tab:disabled {
     color: #94a3b8;
+    background-color: transparent;
     cursor: not-allowed;
+    opacity: 0.72;
 }
 
 .sm .tab {
-    padding: 7px 10px;
+    min-height: 32px;
+    padding: 6px 10px;
     font-size: 13px;
 }
 
 .md .tab {
-    padding: 10px 14px;
+    min-height: 40px;
+    padding: 9px 14px;
     font-size: 14px;
+}
+
+.lg .tab {
+    min-height: 48px;
+    padding: 12px 18px;
+    font-size: 16px;
 }
 
 .fullWidth .tab {
@@ -68,39 +83,54 @@
 }
 
 .line .active {
+    background-color: #ffffff;
     border-bottom-color: #2563eb;
     color: #2563eb;
 }
 
-.contained {
+.boxed {
     flex-wrap: wrap;
     gap: 8px;
+    padding: 4px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background-color: #f8fafc;
 }
 
-.contained .tab {
+.boxed .tab {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border: 1px solid #cbd5e1;
-    border-radius: 999px;
+    border-radius: 6px;
     background-color: #ffffff;
     color: #334155;
 }
 
-.contained .tab:hover:not(:disabled) {
+.boxed .tab:hover:not(:disabled) {
     border-color: #94a3b8;
-    background-color: #f8fafc;
+    background-color: #f1f5f9;
 }
 
-.contained .active {
+.boxed .active {
     border-color: #2563eb;
     background-color: #2563eb;
     color: #ffffff;
 }
 
-.contained .active:hover:not(:disabled) {
+.boxed .active:hover:not(:disabled) {
     background-color: #1d4ed8;
     color: #ffffff;
+}
+
+.panel {
+    min-width: 0;
+    padding-top: 16px;
+}
+
+.panel:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 18%);
 }
 
 @media (max-width: 640px) {
@@ -112,7 +142,7 @@
         scrollbar-width: thin;
     }
 
-    .contained {
+    .boxed {
         gap: 6px;
     }
 }
