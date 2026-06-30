@@ -41,3 +41,4 @@ export * from './Wrap';
 export * from './Container';
 export * from './Calendar';
 export * from './Slider';
+export * from './Timeline';
