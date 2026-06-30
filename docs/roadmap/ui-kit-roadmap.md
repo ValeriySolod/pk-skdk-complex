@@ -68,14 +68,14 @@ implementation
 |----|-----------|--------|
 | UI-029 | Avatar | ✅ |
 | UI-030 | Divider | ✅ |
-| UI-031 | Accordion | ⬜ |
+| UI-031 | Accordion | ✅ |
 | UI-032 | Avatar | ✅ |
 | UI-033 | Universal Spacer | ✅ |
-| UI-034 | Menu | ⬜ |
-| UI-035 | ContextMenu | ⬜ |
-| UI-036 | TreeView | ⬜ |
-| UI-037 | FileUpload | ⬜ |
-| UI-038 | DatePicker | ⬜ |
+| UI-034 | Menu | ✅ |
+| UI-035 | ContextMenu | ✅ |
+| UI-036 | TreeView | ✅ |
+| UI-037 | FileUpload | ✅|
+| UI-038 | DatePicker | ✅ |
 | UI-039 | TimePicker | ⬜ |
 | UI-040 | Calendar | ⬜ |
 | UI-041 | Slider | ⬜ |
