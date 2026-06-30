@@ -32,6 +32,7 @@ implementation
 |----|-----------|--------|
 | UI-001 | Card | ✅ |
 | UI-002 | Button | ✅ |
+| UI-003 | Input | ✅ |
 | UI-004 | Select | ✅ |
 | UI-005 | Textarea | ✅ |
 | UI-006 | FormField | ✅ |
@@ -82,7 +83,6 @@ implementation
 
 | ID | Component | Status |
 |----|-----------|--------|
-| UI-003 | Input | ⬜ |
 | UI-033 | Menu | ⬜ |
 | UI-034 | ContextMenu | ⬜ |
 | UI-035 | TreeView | ⬜ |

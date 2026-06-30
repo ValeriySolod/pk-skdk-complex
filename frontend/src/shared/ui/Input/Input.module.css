@@ -1,0 +1,83 @@
+.input {
+    box-sizing: border-box;
+    width: 240px;
+    max-width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    color: #0f172a;
+    font: inherit;
+    line-height: 1.4;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background-color 0.15s ease;
+}
+
+.input::placeholder {
+    color: #94a3b8;
+}
+
+.input:hover:not(:disabled):not(:read-only) {
+    border-color: #94a3b8;
+}
+
+.input:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 15%);
+}
+
+.input:disabled {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.input:read-only:not(:disabled) {
+    background-color: #f8fafc;
+    color: #475569;
+    cursor: default;
+}
+
+.sm {
+    min-height: 32px;
+    padding: 6px 10px;
+    font-size: 14px;
+}
+
+.md {
+    min-height: 40px;
+    padding: 8px 12px;
+}
+
+.lg {
+    min-height: 48px;
+    padding: 10px 14px;
+    font-size: 16px;
+}
+
+.default {
+    background-color: #ffffff;
+}
+
+.filled {
+    border-color: transparent;
+    background-color: #f1f5f9;
+}
+
+.filled:hover:not(:disabled):not(:read-only) {
+    border-color: #cbd5e1;
+}
+
+.invalid {
+    border-color: #dc2626;
+}
+
+.invalid:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgb(220 38 38 / 15%);
+}
+
+.fullWidth {
+    width: 100%;
+}
