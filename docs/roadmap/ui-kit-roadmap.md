@@ -80,7 +80,7 @@ implementation
 | UI-040 | Calendar | ✅ |
 | UI-041 | Slider | ✅ |
 | UI-042 | Tabs | ✅ |
-| UI-043 | Autocomplete | ⬜ |
+| UI-043 | Tooltip | ✅ |
 | UI-044 | Combobox | ⬜ |
 | UI-045 | MultiSelect | ⬜ |
 | UI-046 | Timeline | ⬜ |
