@@ -85,6 +85,6 @@ implementation
 | UI-045 | MultiSelect | ✅ |
 | UI-046 | Timeline | ✅ |
 | UI-047 | AvatarGroup | ⬜ |
-| UI-048 | Statistic | ⬜ |
+| UI-048 | Statistic | ✅ |
 | UI-049 | DataGrid | ⬜ |
 | UI-050 | AppShell | ⬜ |
