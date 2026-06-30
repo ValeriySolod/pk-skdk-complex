@@ -1,86 +1,68 @@
-import type { Key, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import clsx from 'clsx';
 
 import styles from './DataGrid.module.css';
 
-export type DataGridAlign = 'left' | 'center' | 'right';
-
-export interface DataGridColumn<T extends object> {
-  key: keyof T | string;
+export interface DataGridColumn<TItem> {
+  key: string;
   header: ReactNode;
-  render?: (row: T) => ReactNode;
-  align?: DataGridAlign;
-  width?: string | number;
+  render: (item: TItem, index: number) => ReactNode;
+  align?: 'left' | 'center' | 'right';
+  width?: string;
 }
 
-export interface DataGridProps<T extends object> {
-  columns: DataGridColumn<T>[];
-  rows: T[];
-  rowKey: (row: T) => Key;
+export interface DataGridProps<TItem> {
+  items: TItem[];
+  columns: DataGridColumn<TItem>[];
+  getRowKey: (item: TItem, index: number) => string | number;
+  caption?: string;
   emptyMessage?: ReactNode;
+  loading?: boolean;
   striped?: boolean;
-  hoverable?: boolean;
+  bordered?: boolean;
   compact?: boolean;
   className?: string;
 }
 
-function getCellContent<T extends object>(row: T, column: DataGridColumn<T>): ReactNode {
-  if (column.render) {
-    return column.render(row);
-  }
-
-  if (typeof column.key === 'string' && !Object.prototype.hasOwnProperty.call(row, column.key)) {
-    return null;
-  }
-
-  const value = row[column.key as keyof T];
-
-  if (value === null || value === undefined) {
-    return null;
-  }
-
-  if (
-    typeof value === 'string' ||
-    typeof value === 'number' ||
-    typeof value === 'boolean' ||
-    typeof value === 'bigint'
-  ) {
-    return String(value);
-  }
-
-  return null;
-}
-
-export function DataGrid<T extends object>({
+export function DataGrid<TItem>({
+  items,
   columns,
-  rows,
-  rowKey,
-  emptyMessage = 'No data',
+  getRowKey,
+  caption,
+  emptyMessage = 'No data to display',
+  loading = false,
   striped = false,
-  hoverable = false,
+  bordered = false,
   compact = false,
   className,
-}: DataGridProps<T>) {
-  const hasRows = rows.length > 0;
+}: DataGridProps<TItem>) {
+  if (columns.length === 0) {
+    return null;
+  }
+
+  const stateMessage = loading ? 'Loading data...' : emptyMessage;
+  const shouldShowState = loading || items.length === 0;
 
   return (
-    <div className={clsx(styles.wrapper, className)}>
+    <div className={clsx(styles.wrapper, className)} aria-busy={loading ? true : undefined}>
       <table
         className={clsx(
           styles.table,
           striped && styles.striped,
-          hoverable && styles.hoverable,
+          bordered && styles.bordered,
           compact && styles.compact,
         )}
       >
+        {caption ? <caption className={styles.caption}>{caption}</caption> : null}
+
         <thead className={styles.head}>
           <tr>
             {columns.map((column) => (
               <th
                 className={clsx(styles.headerCell, styles[column.align ?? 'left'])}
-                key={String(column.key)}
+                key={column.key}
                 scope="col"
-                style={{ width: column.width }}
+                style={column.width ? { width: column.width } : undefined}
               >
                 {column.header}
               </th>
@@ -89,22 +71,28 @@ export function DataGrid<T extends object>({
         </thead>
 
         <tbody className={styles.body}>
-          {hasRows ? (
-            rows.map((row) => (
-              <tr className={styles.row} key={rowKey(row)}>
+          {shouldShowState ? (
+            <tr>
+              <td className={styles.stateCell} colSpan={columns.length}>
+                {loading ? (
+                  <span role="status" aria-live="polite">
+                    {stateMessage}
+                  </span>
+                ) : (
+                  stateMessage
+                )}
+              </td>
+            </tr>
+          ) : (
+            items.map((item, index) => (
+              <tr className={styles.row} key={getRowKey(item, index)}>
                 {columns.map((column) => (
-                  <td className={clsx(styles.cell, styles[column.align ?? 'left'])} key={String(column.key)}>
-                    {getCellContent(row, column)}
+                  <td className={clsx(styles.cell, styles[column.align ?? 'left'])} key={column.key}>
+                    {column.render(item, index)}
                   </td>
                 ))}
               </tr>
             ))
-          ) : (
-            <tr>
-              <td className={styles.emptyCell} colSpan={Math.max(columns.length, 1)}>
-                {emptyMessage}
-              </td>
-            </tr>
           )}
         </tbody>
       </table>

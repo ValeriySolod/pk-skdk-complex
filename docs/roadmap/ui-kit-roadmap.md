@@ -71,7 +71,7 @@ implementation
 | UI-046 | Grid | ✅ |
 | UI-047 | Carousel | ✅ |
 | UI-048 | Statistic | ✅ |
-| UI-049 | DataGrid | ✅ |
+| UI-050 | DataGrid | ✅ |
 | UI-052 | SearchBox | ✅ |
 | UI-053 | Flex | ✅ |
 | UI-054 | Inline | ✅ |
@@ -89,5 +89,5 @@ implementation
 | UI-036 | FileUpload | ⬜ |
 | UI-037 | DatePicker | ⬜ |
 | UI-041 | Combobox | ⬜ |
-| UI-050 | AppShell | ⬜ |
+| UI-049 | AppShell | ⬜ |
 | UI-051 | AvatarGroup | ⬜ |
