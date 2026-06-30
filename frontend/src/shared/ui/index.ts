@@ -46,3 +46,4 @@ export * from './Timeline';
 export * from './Carousel';
 export * from './Statistic';
 export * from './DataGrid';
+export * from './AppShell';
