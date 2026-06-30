@@ -81,8 +81,8 @@ implementation
 | UI-041 | Slider | ✅ |
 | UI-042 | Tabs | ✅ |
 | UI-043 | Tooltip | ✅ |
-| UI-044 | Combobox | ⬜ |
-| UI-045 | MultiSelect | ⬜ |
+| UI-044 | Combobox | ✅ |
+| UI-045 | MultiSelect | ✅ |
 | UI-046 | Timeline | ⬜ |
 | UI-047 | AvatarGroup | ⬜ |
 | UI-048 | Statistic | ⬜ |
