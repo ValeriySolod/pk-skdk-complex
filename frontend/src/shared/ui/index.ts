@@ -34,4 +34,5 @@ export * from './Accordion';
 export * from './Spacer';
 export * from './Grid';
 export * from './Flex';
+export * from './Inline';
 export * from './Container';
