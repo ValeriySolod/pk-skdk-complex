@@ -31,6 +31,7 @@ export * from './Banner';
 export * from './Stepper';
 export * from './ProgressBar';
 export * from './Avatar';
+export * from './AvatarGroup';
 export * from './Divider';
 export * from './Accordion';
 export * from './Spacer';
