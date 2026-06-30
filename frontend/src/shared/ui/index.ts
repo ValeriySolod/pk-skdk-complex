@@ -32,3 +32,6 @@ export * from './Avatar';
 export * from './Divider';
 export * from './Accordion';
 export * from './Spacer';
+export * from './Grid';
+export * from './Flex';
+export * from './Container';

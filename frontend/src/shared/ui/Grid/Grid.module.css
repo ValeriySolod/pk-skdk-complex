@@ -1,0 +1,28 @@
+.grid {
+    display: grid;
+    grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
+}
+
+.none {
+    gap: 0;
+}
+
+.xs {
+    gap: 4px;
+}
+
+.sm {
+    gap: 8px;
+}
+
+.md {
+    gap: 16px;
+}
+
+.lg {
+    gap: 24px;
+}
+
+.xl {
+    gap: 32px;
+}
