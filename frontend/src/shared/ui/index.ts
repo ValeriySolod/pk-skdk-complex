@@ -1,6 +1,7 @@
 export * from './Button';
 export * from './Card';
 export * from './Input';
+export * from './FileUpload';
 export { PageHeader } from './PageHeader/PageHeader';
 export { SearchBox } from './SearchBox/SearchBox';
 export { Loader } from './Loader/Loader';
