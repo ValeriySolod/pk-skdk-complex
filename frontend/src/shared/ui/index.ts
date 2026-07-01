@@ -9,6 +9,7 @@ export { Loader } from './Loader/Loader';
 export * from './EmptyState';
 export * from './Select';
 export * from './MultiSelect';
+export * from './Combobox';
 export * from './Textarea';
 export * from './Checkbox';
 export * from './Switch';

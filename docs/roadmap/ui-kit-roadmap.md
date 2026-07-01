@@ -88,6 +88,6 @@ implementation
 | UI-035 | TreeView | ✅ |
 | UI-036 | FileUpload | ✅ |
 | UI-037 | DatePicker | ✅ |
-| UI-041 | Combobox | ⬜ |
+| UI-041 | Combobox | ✅ |
 | UI-049 | AppShell | ✅ |
 | UI-051 | AvatarGroup | ✅ |
