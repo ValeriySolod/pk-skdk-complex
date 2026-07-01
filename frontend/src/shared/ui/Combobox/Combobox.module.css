@@ -1,0 +1,186 @@
+.field {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.control {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 34px 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  line-height: 1.4;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.input::placeholder {
+  color: #94a3b8;
+}
+
+.input:hover:not(:disabled) {
+  border-color: #94a3b8;
+}
+
+.input:focus {
+  border-color: #2563eb;
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 15%);
+}
+
+.input:disabled {
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.invalid {
+  border-color: #dc2626;
+}
+
+.invalid:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgb(220 38 38 / 15%);
+}
+
+.chevron {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  color: #64748b;
+  pointer-events: none;
+  rotate: 45deg;
+  translate: 0 -70%;
+}
+
+.input:disabled + .chevron {
+  color: #94a3b8;
+}
+
+.dropdown {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  min-width: min(220px, 100%);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgb(15 23 42 / 16%);
+}
+
+.list {
+  max-height: 240px;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.option {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.option:hover:not(.optionDisabled),
+.optionActive {
+  background: #f1f5f9;
+}
+
+.optionSelected {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.optionSelected:hover:not(.optionDisabled),
+.optionSelected.optionActive {
+  background: #dbeafe;
+}
+
+.optionDisabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.optionLabel {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.checkmark {
+  width: 6px;
+  height: 12px;
+  flex: 0 0 auto;
+  border-right: 2px solid #2563eb;
+  border-bottom: 2px solid #2563eb;
+  rotate: 45deg;
+  translate: -2px -1px;
+}
+
+.empty {
+  padding: 12px;
+  color: #64748b;
+  font-size: 14px;
+  text-align: center;
+}
+
+.helperText,
+.errorText {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.helperText {
+  color: #64748b;
+}
+
+.errorText {
+  color: #dc2626;
+}
+
+@media (max-width: 480px) {
+  .input {
+    min-height: 44px;
+  }
+
+  .dropdown {
+    max-width: calc(100vw - 24px);
+  }
+}
