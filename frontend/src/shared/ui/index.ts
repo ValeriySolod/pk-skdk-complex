@@ -27,9 +27,7 @@ export * from './Breadcrumbs';
 export * from './Skeleton';
 export * from './LoadingOverlay';
 export * from './Alert';
-
 export * from './Notification';
-
 export * from './Banner';
 export * from './Stepper';
 export * from './ProgressBar';
@@ -50,3 +48,4 @@ export * from './Carousel';
 export * from './Statistic';
 export * from './DataGrid';
 export * from './AppShell';
+export * from './TreeView';

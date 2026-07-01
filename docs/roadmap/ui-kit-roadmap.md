@@ -85,7 +85,7 @@ implementation
 | ID | Component | Status |
 |----|-----------|--------|
 | UI-034 | ContextMenu | ✅ |
-| UI-035 | TreeView | ⬜ |
+| UI-035 | TreeView | ✅ |
 | UI-036 | FileUpload | ⬜ |
 | UI-037 | DatePicker | ⬜ |
 | UI-041 | Combobox | ⬜ |
