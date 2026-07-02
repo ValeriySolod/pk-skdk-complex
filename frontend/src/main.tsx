@@ -1,31 +1,45 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { Layout } from './components/Layout/Layout';
+import { ApplicationShell } from './app/ApplicationShell';
+import { AuthGuard } from './app/guards';
 import { HomePage } from './app/HomePage';
 import { modules } from './app/moduleRegistry';
 import LoginPage from './pages/LoginPage/LoginPage';
 import { getMe, logout, type User } from './api/auth';
 import { getToken } from './api/client';
-import { IncomingRegistryPage } from './modules/registries/pages/IncomingRegistryPage';
 import { ToastProvider } from './shared/ui';
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <Layout />,
-    children: [
-      { index: true, element: <HomePage /> },
-      ...modules.map(({ path, Component }) => ({
-        path,
-        element: <Component />,
-      })),
-      {
-        path: '/registries/incoming',
-        element: <IncomingRegistryPage />,
-      },
-    ],
-  },
-]);
+
+type AppRouterProps = {
+  user: User;
+  onLogout: () => void;
+};
+
+function AppRouter({ user, onLogout }: AppRouterProps) {
+  const router = useMemo(
+    () =>
+      createBrowserRouter([
+        {
+          path: '/',
+          element: (
+            <AuthGuard>
+              <ApplicationShell user={user} onLogout={onLogout} />
+            </AuthGuard>
+          ),
+          children: [
+            { index: true, element: <HomePage /> },
+            ...modules.map(({ path, Component }) => ({
+              path,
+              element: <Component />,
+            })),
+          ],
+        },
+      ]),
+    [onLogout, user],
+  );
+
+  return <RouterProvider router={router} />;
+}
 
 function Root() {
   const [user, setUser] = useState<User | null>(null);
@@ -54,6 +68,11 @@ function Root() {
     checkAuth();
   }, []);
 
+  const handleLogout = useCallback(() => {
+    logout();
+    setUser(null);
+  }, []);
+
   if (checkingAuth) {
     return <p style={{ padding: 32 }}>Перевірка авторизації...</p>;
   }
@@ -62,7 +81,7 @@ function Root() {
     return <LoginPage onLogin={checkAuth} />;
   }
 
-  return <RouterProvider router={router} />;
+  return <AppRouter user={user} onLogout={handleLogout} />;
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

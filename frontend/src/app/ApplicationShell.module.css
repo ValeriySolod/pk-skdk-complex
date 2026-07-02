@@ -1,0 +1,197 @@
+:global(body) {
+    margin: 0;
+    font-family: Inter, Arial, sans-serif;
+    background: #f4f6f8;
+    color: #14213d;
+}
+
+.shell {
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #ffffff;
+}
+
+.brand {
+    display: grid;
+    gap: 2px;
+}
+
+.title {
+    margin: 0;
+    color: #0f172a;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.subtitle {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.userPanel {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.userText {
+    display: grid;
+    gap: 2px;
+    text-align: right;
+}
+
+.userName {
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.userRole {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.logoutButton {
+    min-height: 40px;
+    padding: 9px 14px;
+    border: 0;
+    border-radius: 8px;
+    background: #1d4ed8;
+    color: #ffffff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.logoutButton:hover {
+    background: #1e40af;
+}
+
+.logoutButton:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
+}
+
+.sidebar {
+    min-height: 100%;
+    padding: 24px;
+    background: #0f172a;
+    color: #ffffff;
+}
+
+.sidebarTitle {
+    margin: 0 0 8px;
+    font-size: 24px;
+}
+
+.sidebarSubtitle {
+    margin: 0 0 24px;
+    color: #cbd5e1;
+}
+
+.nav {
+    display: grid;
+    gap: 8px;
+}
+
+.navLink {
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: #e2e8f0;
+    text-decoration: none;
+}
+
+.navLink:hover,
+.navLink:focus-visible,
+.activeNavLink {
+    background: #1e293b;
+    color: #ffffff;
+}
+
+.navLink:focus-visible {
+    outline: 3px solid #60a5fa;
+    outline-offset: 2px;
+}
+
+.content {
+    padding: 32px;
+}
+
+.content :global(.panel) {
+    margin-bottom: 20px;
+    padding: 24px;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.content :global(.grid) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.content :global(.card) {
+    padding: 20px;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.content :global(input),
+.content :global(button),
+.content :global(select) {
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+}
+
+.content :global(button) {
+    border: 0;
+    background: #1d4ed8;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.content :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.content :global(th),
+.content :global(td) {
+    padding: 12px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+}
+
+@media (max-width: 767px) {
+    .header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .userPanel {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .userText {
+        text-align: left;
+    }
+
+    .content {
+        padding: 20px;
+    }
+}
