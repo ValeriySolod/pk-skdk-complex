@@ -17,3 +17,11 @@ Each module task has a unique identifier (`MOD-XXX`) that never changes after be
 | MOD-003 | TBD | ⬜ | Planned |
 | MOD-004 | TBD | ⬜ | Planned |
 | MOD-005 | TBD | ⬜ | Planned |
+
+---
+
+# Development Tasks
+
+| ID | Task | Status | Notes |
+|----|------|--------|-------|
+| DEV-001 | Git Bash Workflow Scripts | ✅ | Git Bash helper scripts and documentation created |
