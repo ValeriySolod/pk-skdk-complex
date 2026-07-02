@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, Navigate, RouterProvider, useLocation } from 'react-router-dom';
 import { ApplicationShell } from './app/ApplicationShell';
+import { RouteGuard } from './app/auth/RouteGuard';
 import { AuthGuard } from './app/guards';
 import { HomePage } from './app/HomePage';
 import { isModuleVisibleForRole, modules } from './app/moduleRegistry';
@@ -71,9 +72,13 @@ function AppRouter({ user, onLogout, onLogin }: AppRouterProps) {
           ),
           children: [
             { index: true, element: user ? <HomePage userRole={user.role} /> : null },
-            ...routedModules.map(({ path, Component }) => ({
+            ...routedModules.map(({ path, Component, roles }) => ({
               path,
-              element: <Component />,
+              element: user ? (
+                <RouteGuard userRole={user.role} allowedRoles={roles ? [...roles] : undefined}>
+                  <Component />
+                </RouteGuard>
+              ) : null,
             })),
           ],
         },
