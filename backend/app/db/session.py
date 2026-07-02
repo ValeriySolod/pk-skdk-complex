@@ -11,8 +11,7 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
 def get_db() -> Generator[Session, None, None]:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    """Return the database session dependency from the dependency layer."""
+    from app.db.dependencies import get_db as dependency
+
+    yield from dependency()
