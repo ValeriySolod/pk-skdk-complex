@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Navigate, RouterProvider, useLocation } from 'react-router-dom';
 import { ApplicationShell } from './app/ApplicationShell';
 import { AuthGuard } from './app/guards';
 import { HomePage } from './app/HomePage';
@@ -11,25 +11,66 @@ import { getToken } from './api/client';
 import { ToastProvider } from './shared/ui';
 
 type AppRouterProps = {
-  user: User;
+  user: User | null;
   onLogout: () => void;
+  onLogin: () => void;
 };
 
-function AppRouter({ user, onLogout }: AppRouterProps) {
+type LoginLocationState = {
+  from?: {
+    pathname: string;
+    search: string;
+    hash: string;
+  };
+};
+
+type LoginRouteProps = {
+  user: User | null;
+  onLogin: () => void;
+};
+
+function getRedirectPath(state: LoginLocationState | null): string {
+  const from = state?.from;
+
+  if (!from) {
+    return '/';
+  }
+
+  return `${from.pathname}${from.search}${from.hash}`;
+}
+
+function LoginRoute({ user, onLogin }: LoginRouteProps) {
+  const location = useLocation();
+  const redirectPath = getRedirectPath(location.state as LoginLocationState | null);
+
+  if (user) {
+    return <Navigate to={redirectPath} replace />;
+  }
+
+  return <LoginPage onLogin={onLogin} />;
+}
+
+function AppRouter({ user, onLogout, onLogin }: AppRouterProps) {
   const router = useMemo(
     () => {
-      const routedModules = modules.filter((module) => isModuleVisibleForRole(module, user.role));
+      const routedModules = user
+        ? modules.filter((module) => isModuleVisibleForRole(module, user.role))
+        : modules;
 
       return createBrowserRouter([
         {
+          path: '/login',
+          element: <LoginRoute user={user} onLogin={onLogin} />,
+        },
+        {
           path: '/',
           element: (
-            <AuthGuard>
-              <ApplicationShell user={user} onLogout={onLogout} />
+            <AuthGuard isAuthenticated={user !== null}>
+              {user ? <ApplicationShell user={user} onLogout={onLogout} /> : null}
             </AuthGuard>
           ),
           children: [
-            { index: true, element: <HomePage userRole={user.role} /> },
+            { index: true, element: user ? <HomePage userRole={user.role} /> : null },
             ...routedModules.map(({ path, Component }) => ({
               path,
               element: <Component />,
@@ -38,7 +79,7 @@ function AppRouter({ user, onLogout }: AppRouterProps) {
         },
       ]);
     },
-    [onLogout, user],
+    [onLogin, onLogout, user],
   );
 
   return (
@@ -84,11 +125,7 @@ function Root() {
     return <p style={{ padding: 32 }}>Перевірка авторизації...</p>;
   }
 
-  if (!user) {
-    return <LoginPage onLogin={checkAuth} />;
-  }
-
-  return <AppRouter user={user} onLogout={handleLogout} />;
+  return <AppRouter user={user} onLogout={handleLogout} onLogin={checkAuth} />;
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
