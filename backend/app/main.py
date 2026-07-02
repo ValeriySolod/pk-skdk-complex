@@ -1,4 +1,5 @@
-from fastapi import Depends, FastAPI, APIRouter
+from fastapi import APIRouter, Depends, FastAPI, status
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.dependencies import get_db
@@ -25,6 +26,20 @@ api = APIRouter(prefix='/api/v1')
 api.include_router(auth_router)
 api.include_router(modules_router)
 registry.include_all(api)
+
+
+@api.get('/health/database')
+def api_database_health(db: Session = Depends(get_db)):
+    health_status = DatabaseHealthService(db).check_connection()
+    if health_status.is_healthy:
+        return health_status.as_response()
+
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content=health_status.as_response(),
+    )
+
+
 app.include_router(api)
 
 @app.get('/health')
@@ -34,5 +49,11 @@ def health():
 
 @app.get('/health/db')
 def database_health(db: Session = Depends(get_db)):
-    DatabaseHealthService(db).check_connection()
-    return {'status': 'ok', 'database': 'connected'}
+    health_status = DatabaseHealthService(db).check_connection()
+    if health_status.is_healthy:
+        return health_status.as_response()
+
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content=health_status.as_response(),
+    )
