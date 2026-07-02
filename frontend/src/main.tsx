@@ -4,7 +4,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { ApplicationShell } from './app/ApplicationShell';
 import { AuthGuard } from './app/guards';
 import { HomePage } from './app/HomePage';
-import { modules } from './app/moduleRegistry';
+import { isModuleVisibleForRole, modules } from './app/moduleRegistry';
 import LoginPage from './pages/LoginPage/LoginPage';
 import { getMe, logout, type User } from './api/auth';
 import { getToken } from './api/client';
@@ -17,8 +17,10 @@ type AppRouterProps = {
 
 function AppRouter({ user, onLogout }: AppRouterProps) {
   const router = useMemo(
-    () =>
-      createBrowserRouter([
+    () => {
+      const routedModules = modules.filter((module) => isModuleVisibleForRole(module, user.role));
+
+      return createBrowserRouter([
         {
           path: '/',
           element: (
@@ -27,18 +29,23 @@ function AppRouter({ user, onLogout }: AppRouterProps) {
             </AuthGuard>
           ),
           children: [
-            { index: true, element: <HomePage /> },
-            ...modules.map(({ path, Component }) => ({
+            { index: true, element: <HomePage userRole={user.role} /> },
+            ...routedModules.map(({ path, Component }) => ({
               path,
               element: <Component />,
             })),
           ],
         },
-      ]),
+      ]);
+    },
     [onLogout, user],
   );
 
-  return <RouterProvider router={router} />;
+  return (
+    <React.Suspense fallback={<p style={{ padding: 32 }}>Loading module...</p>}>
+      <RouterProvider router={router} />
+    </React.Suspense>
+  );
 }
 
 function Root() {

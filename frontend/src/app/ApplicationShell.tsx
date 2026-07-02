@@ -2,7 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 
 import type { User } from '../api/auth';
 import { AppShell } from '../shared/ui';
-import { modules } from './moduleRegistry';
+import { hasModuleNavigation, isModuleVisibleForRole, modules } from './moduleRegistry';
 import styles from './ApplicationShell.module.css';
 
 export type ApplicationShellProps = {
@@ -12,6 +12,12 @@ export type ApplicationShellProps = {
 
 export function ApplicationShell({ user, onLogout }: ApplicationShellProps) {
   const displayName = user.full_name || user.username;
+  const navigationModules = modules
+    .filter(hasModuleNavigation)
+    .filter((module) => isModuleVisibleForRole(module, user.role))
+    .sort((firstModule, secondModule) => {
+      return firstModule.navigation.order - secondModule.navigation.order;
+    });
 
   const header = (
     <div className={styles.header}>
@@ -46,12 +52,12 @@ export function ApplicationShell({ user, onLogout }: ApplicationShellProps) {
         >
           Home
         </NavLink>
-        {modules.map((module) => (
+        {navigationModules.map((module) => (
           <NavLink
             className={({ isActive }) =>
               isActive ? `${styles.navLink} ${styles.activeNavLink}` : styles.navLink
             }
-            key={module.code}
+            key={module.id}
             to={module.path}
           >
             {module.title}
