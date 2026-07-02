@@ -1,0 +1,59 @@
+.page {
+    min-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    color: #0f172a;
+}
+
+.content {
+    width: 100%;
+    max-width: 520px;
+    text-align: center;
+}
+
+.status {
+    margin: 0 0 12px;
+    color: #b91c1c;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.title {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.message {
+    margin: 16px 0 28px;
+    color: #475569;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 8px;
+    background: #0f172a;
+    color: #ffffff;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.action:hover {
+    background: #1e293b;
+}
+
+.action:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 3px;
+}

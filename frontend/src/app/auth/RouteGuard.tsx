@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { AccessDeniedPage } from '../../pages/AccessDeniedPage';
 import { hasRequiredRole } from './hasRequiredRole';
 
 export type RouteGuardProps = {
@@ -12,7 +13,7 @@ export function RouteGuard({ children, userRole, allowedRoles }: RouteGuardProps
   const canAccessRoute = hasRequiredRole(userRole, allowedRoles);
 
   if (!canAccessRoute) {
-    return <p role="alert">Access denied</p>;
+    return <AccessDeniedPage />;
   }
 
   return <>{children}</>;
