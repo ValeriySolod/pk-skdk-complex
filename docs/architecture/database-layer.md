@@ -33,14 +33,21 @@ Canonical database exports live in `backend/app/database/`:
 ```txt
 backend/app/database/
   __init__.py
+  base.py
   session.py
 ```
+
+`backend/app/database/base.py` defines:
+
+- `Base`
+- `AbstractBaseModel`
+- `IntegerPrimaryKeyMixin`
+- shared metadata with stable constraint naming conventions
 
 `backend/app/database/session.py` defines:
 
 - `engine`
 - `SessionLocal`
-- `Base`
 - `get_db`
 
 `backend/app/database/__init__.py` re-exports those names for application code.
@@ -59,6 +66,11 @@ and model exports. Models should remain framework-neutral and should not contain
 FastAPI router code or request/response schema definitions.
 
 ## Engine and sessions
+
+The SQLAlchemy declarative base and shared metadata live in
+`backend/app/database/base.py`. The metadata defines stable names for indexes,
+unique constraints, check constraints, foreign keys, and primary keys so future
+Alembic migrations produce predictable operations.
 
 Engine and session configuration lives in `backend/app/database/session.py`.
 

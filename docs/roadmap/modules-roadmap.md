@@ -14,7 +14,7 @@ Each module task has a unique identifier (`MOD-XXX`) that never changes after be
 |----|--------|--------|-------|
 | MOD-001 | Modules roadmap | ✅ | Initial modules roadmap created |
 | MOD-002 | Authentication & Authorization | ✅ | Planned; MOD-002.1 authentication architecture skeleton created; MOD-002.2 authenticated application shell wired to module routes; MOD-002.3 dynamic module registry implemented; MOD-002.4 protected routes added; MOD-002.5 role-based route authorization completed; MOD-002.6 access denied page completed |
-| MOD-003 | Database Layer | ⬜ | SQLAlchemy, PostgreSQL, migrations, seed, database initialization; MOD-003.1 database architecture skeleton created |
+| MOD-003 | Database Layer | ⬜ | SQLAlchemy, PostgreSQL, migrations, seed, database initialization; MOD-003.1 database architecture skeleton created; MOD-003.2 SQLAlchemy base foundation completed |
 | MOD-004 | Organization Structure | ⬜ | Organizational hierarchy, departments, positions, employees |
 | MOD-005 | User Management | ⬜ | User CRUD, role assignment, permissions management |
 | MOD-006 | Document Management | ⬜ | Document registration, categories, statuses, search, lifecycle |
