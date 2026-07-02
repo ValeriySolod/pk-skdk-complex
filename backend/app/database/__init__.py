@@ -1,11 +1,19 @@
-from app.database.base import AbstractBaseModel, Base, IntegerPrimaryKeyMixin, metadata, naming_convention
+from app.database.base import (
+    Base,
+    SoftDeleteMixin,
+    TimestampMixin,
+    UUIDPrimaryKeyMixin,
+    metadata,
+    naming_convention,
+)
 from app.database.session import SessionLocal, engine, get_db
 
 __all__ = [
-    'AbstractBaseModel',
     'Base',
-    'IntegerPrimaryKeyMixin',
+    'SoftDeleteMixin',
     'SessionLocal',
+    'TimestampMixin',
+    'UUIDPrimaryKeyMixin',
     'engine',
     'get_db',
     'metadata',

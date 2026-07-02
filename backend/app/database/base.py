@@ -1,11 +1,11 @@
-from sqlalchemy.orm import Mapped, mapped_column
-
 from app.db.base import Base, metadata, naming_convention
+from app.db.mixins import SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
-
-class IntegerPrimaryKeyMixin:
-    id: Mapped[int] = mapped_column(primary_key=True)
-
-
-class AbstractBaseModel(IntegerPrimaryKeyMixin, Base):
-    __abstract__ = True
+__all__ = [
+    'Base',
+    'metadata',
+    'naming_convention',
+    'UUIDPrimaryKeyMixin',
+    'TimestampMixin',
+    'SoftDeleteMixin',
+]
