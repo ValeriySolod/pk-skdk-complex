@@ -10,7 +10,7 @@ export function Layout() {
         <p>Контроль доставки кореспонденції</p>
         <nav>
           <NavLink to="/">Головна</NavLink>
-          {modules.map((module) => <NavLink key={module.code} to={module.path}>{module.title}</NavLink>)}
+          {modules.map((module) => <NavLink key={module.id} to={module.path}>{module.title}</NavLink>)}
         </nav>
       </aside>
       <main className="content"><Outlet /></main>
