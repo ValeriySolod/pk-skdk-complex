@@ -1,33 +1,44 @@
-from app.core.database import Base, SessionLocal, engine
-from app.core.security import hash_password
-from app.models import Organization, Shipment, User, Role
+from __future__ import annotations
 
-Base.metadata.create_all(bind=engine)
+from collections.abc import Callable, Iterable
 
-def run():
-    db = SessionLocal()
+from sqlalchemy.orm import Session
+
+from app.database import SessionLocal
+
+
+SeedOperation = Callable[[Session], None]
+SessionFactory = Callable[[], Session]
+
+
+SEED_OPERATIONS: tuple[SeedOperation, ...] = ()
+
+
+def run_seed_operations(
+    session: Session,
+    operations: Iterable[SeedOperation] = SEED_OPERATIONS,
+) -> None:
+    """Run registered seed operations inside the caller-managed transaction."""
+    for operation in operations:
+        operation(session)
+
+
+def seed_database(session_factory: SessionFactory = SessionLocal) -> None:
+    """Execute database seed operations manually using the application session."""
+    session = session_factory()
     try:
-        if not db.query(User).filter(User.username == 'admin').first():
-            db.add(User(
-                username='admin',
-                full_name='Адміністратор системи',
-                password_hash=hash_password('admin12345'),
-                role=Role.SYSTEM_ADMIN.value,
-                department='ГУ',
-            ))
-        if not db.query(Organization).first():
-            org = Organization(name='Тестова організація', edrpou='00000000', address='м. Київ', responsible_person='Іваненко І.І.')
-            db.add(org)
-            db.flush()
-            db.add(Shipment(
-                barcode='PKSKDK-000001', sender_org_id=org.id, recipient_name='Отримувач 1',
-                recipient_address='м. Київ, вул. Прикладна, 1', document_number='12/34',
-                access_mark='НЕ СЕКРЕТНО', region='Київ', district='Печерський'
-            ))
-        db.commit()
-        print('Seed completed: admin/admin12345')
+        run_seed_operations(session)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
     finally:
-        db.close()
+        session.close()
 
-if __name__ == '__main__':
-    run()
+
+def main() -> None:
+    seed_database()
+
+
+if __name__ == "__main__":
+    main()
