@@ -63,9 +63,14 @@ implementation
 | UI-031 | Accordion | ✅ |
 | UI-032 | Spacer | ✅ |
 | UI-033 | Menu | ✅ |
+| UI-034 | ContextMenu | ✅ |
+| UI-035 | TreeView | ✅ |
+| UI-036 | FileUpload | ✅ |
+| UI-037 | DatePicker | ✅ |
 | UI-038 | Wrap | ✅ |
 | UI-039 | Calendar | ✅ |
 | UI-040 | Slider | ✅ |
+| UI-041 | Combobox | ✅ |
 | UI-042 | MultiSelect | ✅ |
 | UI-043 | Popover | ✅ |
 | UI-044 | Timeline | ✅ |
@@ -73,7 +78,9 @@ implementation
 | UI-046 | Grid | ✅ |
 | UI-047 | Carousel | ✅ |
 | UI-048 | Statistic | ✅ |
+| UI-049 | AppShell | ✅ |
 | UI-050 | DataGrid | ✅ |
+| UI-051 | AvatarGroup | ✅ |
 | UI-052 | SearchBox | ✅ |
 | UI-053 | Flex | ✅ |
 | UI-054 | Inline | ✅ |
@@ -84,10 +91,3 @@ implementation
 
 | ID | Component | Status |
 |----|-----------|--------|
-| UI-034 | ContextMenu | ✅ |
-| UI-035 | TreeView | ✅ |
-| UI-036 | FileUpload | ✅ |
-| UI-037 | DatePicker | ✅ |
-| UI-041 | Combobox | ✅ |
-| UI-049 | AppShell | ✅ |
-| UI-051 | AvatarGroup | ✅ |
