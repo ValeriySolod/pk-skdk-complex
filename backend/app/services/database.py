@@ -1,31 +1,29 @@
-from dataclasses import dataclass
-
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.services.health import ServiceHealthStatus
 
-@dataclass(frozen=True)
-class DatabaseHealthStatus:
-    status: str
-    database: str
-    detail: str | None = None
+
+class DatabaseHealthStatus(ServiceHealthStatus):
+    """Health status payload for database connectivity checks."""
+
+    def __init__(self, status: str, database: str, detail: str | None = None) -> None:
+        super().__init__(
+            status=status,
+            component_key="database",
+            component_status=database,
+            detail=detail,
+        )
 
     @property
-    def is_healthy(self) -> bool:
-        return self.status == "ok"
-
-    def as_response(self) -> dict[str, str]:
-        response = {
-            "status": self.status,
-            "database": self.database,
-        }
-        if self.detail is not None:
-            response["detail"] = self.detail
-        return response
+    def database(self) -> str:
+        return self.component_status
 
 
 class DatabaseHealthService:
+    """Run database health checks."""
+
     def __init__(self, db: Session) -> None:
         self.db = db
 
