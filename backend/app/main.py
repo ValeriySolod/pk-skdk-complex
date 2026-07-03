@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.dependencies import get_db
 from app.services.database import DatabaseHealthService
+from app.services.health import ApplicationHealthStatus
 from sqlalchemy.orm import Session
 from app.core.database import Base, engine
 from app.api.v1.auth import router as auth_router
@@ -44,7 +45,7 @@ app.include_router(api)
 
 @app.get('/health')
 def health():
-    return {'status': 'ok', 'app': settings.APP_NAME}
+    return ApplicationHealthStatus(status='ok', app=settings.APP_NAME).as_response()
 
 
 @app.get('/health/db')
