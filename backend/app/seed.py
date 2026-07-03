@@ -4,7 +4,7 @@ from collections.abc import Callable, Iterable
 
 from sqlalchemy.orm import Session
 
-from app.database import SessionLocal
+from app.db import SessionLocal
 
 
 SeedOperation = Callable[[Session], None]
