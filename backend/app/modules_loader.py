@@ -11,3 +11,4 @@ import app.modules.reports
 import app.modules.analytics
 import app.modules.admin
 import app.modules.workflow
+import app.modules.organization_structure
