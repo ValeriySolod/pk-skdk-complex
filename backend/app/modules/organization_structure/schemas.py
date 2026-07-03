@@ -8,8 +8,7 @@ from pydantic import BaseModel, ConfigDict
 
 class OrganizationUnitBase(BaseModel):
     name: str
-    code: str
-    unit_type: str
+    code: Optional[str] = None
     parent_id: Optional[int] = None
     is_active: bool = True
 
@@ -21,7 +20,6 @@ class OrganizationUnitCreate(OrganizationUnitBase):
 class OrganizationUnitUpdate(BaseModel):
     name: Optional[str] = None
     code: Optional[str] = None
-    unit_type: Optional[str] = None
     parent_id: Optional[int] = None
     is_active: Optional[bool] = None
 
@@ -34,7 +32,7 @@ class OrganizationUnitRead(OrganizationUnitBase):
 
 class PositionBase(BaseModel):
     title: str
-    code: str
+    code: Optional[str] = None
     organization_unit_id: int
     is_active: bool = True
 
@@ -59,9 +57,8 @@ class PositionRead(PositionBase):
 class EmployeeAssignmentBase(BaseModel):
     user_id: int
     position_id: int
-    start_date: date
+    start_date: Optional[date] = None
     end_date: Optional[date] = None
-    is_primary: bool = False
     is_active: bool = True
 
 
