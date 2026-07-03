@@ -8,6 +8,7 @@ from app.services.health import ApplicationHealthStatus
 from sqlalchemy.orm import Session
 from app.core.database import Base, engine
 from app.api.v1.auth import router as auth_router
+from app.api.v1.health import router as health_router
 from app.api.v1.modules import router as modules_router
 import app.modules_loader  # noqa: F401
 from app.core.module_registry import registry
@@ -25,20 +26,9 @@ app.add_middleware(
 
 api = APIRouter(prefix='/api/v1')
 api.include_router(auth_router)
+api.include_router(health_router)
 api.include_router(modules_router)
 registry.include_all(api)
-
-
-@api.get('/health/database')
-def api_database_health(db: Session = Depends(get_db)):
-    health_status = DatabaseHealthService(db).check_connection()
-    if health_status.is_healthy:
-        return health_status.as_response()
-
-    return JSONResponse(
-        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        content=health_status.as_response(),
-    )
 
 
 app.include_router(api)
