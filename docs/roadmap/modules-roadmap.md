@@ -35,3 +35,4 @@ Each module task has a unique identifier (`MOD-XXX`) that never changes after be
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
 | DEV-001 | Git Bash Workflow Scripts | ✅ | Git Bash helper scripts and documentation created |
+| MOD-004.3 | Organization Structure schemas skeleton | ✅ | Pydantic schema skeletons added |
