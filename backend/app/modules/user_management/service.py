@@ -137,6 +137,12 @@ class UserManagementService:
         )
         return self.repository.role_assignments.create(role_assignment)
 
+    def create_role_assignment(
+        self,
+        payload: UserManagementRoleAssignmentCreate,
+    ) -> UserManagementRoleAssignment:
+        return self.assign_role(payload)
+
     def update_role_assignment(
         self,
         role_assignment_id: int,
@@ -217,6 +223,12 @@ class UserManagementService:
 
     def list_audit_events(self) -> list[UserManagementAuditEvent]:
         return self.repository.audit_events.list()
+
+    def get_audit_event(
+        self,
+        audit_event_id: int,
+    ) -> UserManagementAuditEvent | None:
+        return self.repository.audit_events.get_by_id(audit_event_id)
 
     def list_audit_events_by_actor(
         self,
