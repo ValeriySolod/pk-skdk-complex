@@ -26,6 +26,26 @@ class OrganizationUnitRepository:
     def list(self) -> list[OrganizationUnit]:
         return list(self.db.scalars(select(OrganizationUnit)).all())
 
+    def get_active_by_id(self, organization_unit_id: int) -> OrganizationUnit | None:
+        return self.db.scalar(
+            select(OrganizationUnit).where(
+                OrganizationUnit.id == organization_unit_id,
+                OrganizationUnit.is_active.is_(True),
+            ),
+        )
+
+    def get_by_code(self, code: str) -> OrganizationUnit | None:
+        return self.db.scalar(
+            select(OrganizationUnit).where(OrganizationUnit.code == code),
+        )
+
+    def list_active(self) -> list[OrganizationUnit]:
+        return list(
+            self.db.scalars(
+                select(OrganizationUnit).where(OrganizationUnit.is_active.is_(True)),
+            ).all(),
+        )
+
     def create(self, organization_unit: OrganizationUnit) -> OrganizationUnit:
         self.db.add(organization_unit)
         self.db.flush()
@@ -68,6 +88,21 @@ class PositionRepository:
     def list(self) -> list[Position]:
         return list(self.db.scalars(select(Position)).all())
 
+    def get_active_by_id(self, position_id: int) -> Position | None:
+        return self.db.scalar(
+            select(Position).where(
+                Position.id == position_id,
+                Position.is_active.is_(True),
+            ),
+        )
+
+    def list_active(self) -> list[Position]:
+        return list(
+            self.db.scalars(
+                select(Position).where(Position.is_active.is_(True)),
+            ).all(),
+        )
+
     def create(self, position: Position) -> Position:
         self.db.add(position)
         self.db.flush()
@@ -109,6 +144,21 @@ class EmployeeAssignmentRepository:
 
     def list(self) -> list[EmployeeAssignment]:
         return list(self.db.scalars(select(EmployeeAssignment)).all())
+
+    def get_active_by_id(self, employee_assignment_id: int) -> EmployeeAssignment | None:
+        return self.db.scalar(
+            select(EmployeeAssignment).where(
+                EmployeeAssignment.id == employee_assignment_id,
+                EmployeeAssignment.is_active.is_(True),
+            ),
+        )
+
+    def list_active(self) -> list[EmployeeAssignment]:
+        return list(
+            self.db.scalars(
+                select(EmployeeAssignment).where(EmployeeAssignment.is_active.is_(True)),
+            ).all(),
+        )
 
     def create(self, employee_assignment: EmployeeAssignment) -> EmployeeAssignment:
         self.db.add(employee_assignment)
