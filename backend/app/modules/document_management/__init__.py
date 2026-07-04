@@ -3,7 +3,11 @@ from fastapi import APIRouter
 from app.core.module_registry import ModuleManifest, registry
 from app.modules.document_management.models import (
     Document,
+    DocumentAuditEvent,
     DocumentCategory,
+    DocumentPermission,
+    DocumentTag,
+    DocumentTagAssignment,
     DocumentVersion,
 )
 
@@ -27,6 +31,10 @@ registry.register(
 
 __all__ = [
     "Document",
+    "DocumentAuditEvent",
     "DocumentCategory",
+    "DocumentPermission",
+    "DocumentTag",
+    "DocumentTagAssignment",
     "DocumentVersion",
 ]
