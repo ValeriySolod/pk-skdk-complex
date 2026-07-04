@@ -81,13 +81,6 @@ class UserManagementService:
     ) -> UserManagementProfile | None:
         values: dict[str, object] = payload.model_dump(exclude_unset=True)
 
-        if "user_id" in values:
-            user_id = values["user_id"]
-            if not isinstance(user_id, int):
-                raise ValueError("Invalid profile user")
-            self._validate_profile_user(user_id)
-            self._validate_unique_profile_user(user_id, profile_id)
-
         return self.repository.profiles.update(profile_id, values)
 
     def list_role_assignments(self) -> list[UserManagementRoleAssignment]:
@@ -160,13 +153,6 @@ class UserManagementService:
         scope_type = role_assignment.scope_type
         scope_id = role_assignment.scope_id
         is_active = role_assignment.is_active
-
-        if "user_id" in values:
-            value = values["user_id"]
-            if not isinstance(value, int):
-                raise ValueError("Invalid role assignment user")
-            self._validate_role_assignment_user(value)
-            user_id = value
 
         if "role_code" in values:
             value = values["role_code"]

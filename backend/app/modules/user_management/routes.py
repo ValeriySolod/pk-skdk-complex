@@ -6,6 +6,11 @@ from sqlalchemy.orm import Session
 from app.core.security import get_current_user
 from app.db.dependencies import get_db
 from app.models import User
+from app.modules.user_management.models import (
+    UserManagementAuditEvent,
+    UserManagementProfile,
+    UserManagementRoleAssignment,
+)
 from app.modules.user_management.repository import UserManagementRepository
 from app.modules.user_management.schemas import (
     UserManagementAuditEventCreate,
@@ -43,7 +48,7 @@ def raise_bad_request(exc: ValueError) -> NoReturn:
 def module_health(
     service: UserManagementService = Depends(get_user_management_service),
     _: User = Depends(get_current_user),
-):
+) -> dict[str, str]:
     return service.health()
 
 
@@ -51,7 +56,7 @@ def module_health(
 def list_users(
     service: UserManagementService = Depends(get_user_management_service),
     _: User = Depends(get_current_user),
-):
+) -> list[User]:
     return service.list_users()
 
 
@@ -60,7 +65,7 @@ def get_user(
     user_id: int,
     service: UserManagementService = Depends(get_user_management_service),
     _: User = Depends(get_current_user),
-):
+) -> User:
     user = service.get_user(user_id)
     if user is None:
         raise HTTPException(
@@ -74,7 +79,7 @@ def get_user(
 def list_profiles(
     service: UserManagementService = Depends(get_user_management_service),
     _: User = Depends(get_current_user),
-):
+) -> list[UserManagementProfile]:
     return service.list_profiles()
 
 
@@ -87,7 +92,7 @@ def create_profile(
     payload: UserManagementProfileCreate,
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
-):
+) -> UserManagementProfile:
     service = get_user_management_service(db)
     try:
         profile = service.create_profile(payload)
@@ -103,7 +108,7 @@ def get_profile(
     profile_id: int,
     service: UserManagementService = Depends(get_user_management_service),
     _: User = Depends(get_current_user),
-):
+) -> UserManagementProfile:
     profile = service.get_profile(profile_id)
     if profile is None:
         raise HTTPException(
@@ -119,7 +124,7 @@ def update_profile(
     payload: UserManagementProfileUpdate,
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
-):
+) -> UserManagementProfile:
     service = get_user_management_service(db)
     try:
         profile = service.update_profile(profile_id, payload)
@@ -142,7 +147,7 @@ def update_profile(
 def list_role_assignments(
     service: UserManagementService = Depends(get_user_management_service),
     _: User = Depends(get_current_user),
-):
+) -> list[UserManagementRoleAssignment]:
     return service.list_role_assignments()
 
 
@@ -155,7 +160,7 @@ def create_role_assignment(
     payload: UserManagementRoleAssignmentCreate,
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
-):
+) -> UserManagementRoleAssignment:
     service = get_user_management_service(db)
     try:
         role_assignment = service.create_role_assignment(payload)
@@ -174,7 +179,7 @@ def get_role_assignment(
     assignment_id: int,
     service: UserManagementService = Depends(get_user_management_service),
     _: User = Depends(get_current_user),
-):
+) -> UserManagementRoleAssignment:
     role_assignment = service.get_role_assignment(assignment_id)
     if role_assignment is None:
         raise HTTPException(
@@ -193,7 +198,7 @@ def update_role_assignment(
     payload: UserManagementRoleAssignmentUpdate,
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
-):
+) -> UserManagementRoleAssignment:
     service = get_user_management_service(db)
     try:
         role_assignment = service.update_role_assignment(assignment_id, payload)
@@ -213,7 +218,7 @@ def update_role_assignment(
 def list_audit_events(
     service: UserManagementService = Depends(get_user_management_service),
     _: User = Depends(get_current_user),
-):
+) -> list[UserManagementAuditEvent]:
     return service.list_audit_events()
 
 
@@ -226,7 +231,7 @@ def create_audit_event(
     payload: UserManagementAuditEventCreate,
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
-):
+) -> UserManagementAuditEvent:
     service = get_user_management_service(db)
     try:
         audit_event = service.create_audit_event(payload)
@@ -242,7 +247,7 @@ def get_audit_event(
     event_id: int,
     service: UserManagementService = Depends(get_user_management_service),
     _: User = Depends(get_current_user),
-):
+) -> UserManagementAuditEvent:
     audit_event = service.get_audit_event(event_id)
     if audit_event is None:
         raise HTTPException(
