@@ -1,6 +1,6 @@
 from app.core.module_registry import ModuleManifest, registry
 
-from .router import router
+from .routes import router
 
 
 def get_router():
