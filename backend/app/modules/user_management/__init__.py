@@ -1,4 +1,9 @@
 from app.core.module_registry import ModuleManifest, registry
+from app.modules.user_management.models import (
+    UserManagementAuditEvent,
+    UserManagementProfile,
+    UserManagementRoleAssignment,
+)
 
 from .routes import router
 
@@ -16,3 +21,10 @@ registry.register(
         permissions=["user_management:read"],
     )
 )
+
+
+__all__ = [
+    "UserManagementAuditEvent",
+    "UserManagementProfile",
+    "UserManagementRoleAssignment",
+]
