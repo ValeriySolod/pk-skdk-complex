@@ -10,6 +10,7 @@ from app.core.database import Base
 
 import app.models  # noqa: F401
 import app.modules.organization_structure.models  # noqa: F401
+import app.modules.user_management.models  # noqa: F401
 
 
 config = context.config
