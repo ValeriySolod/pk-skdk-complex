@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -29,6 +31,13 @@ def get_organization_structure_service(
     return OrganizationStructureService(repository)
 
 
+def raise_bad_request(exc: ValueError) -> NoReturn:
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=str(exc),
+    ) from exc
+
+
 @router.get("/health")
 def module_health(_: User = Depends(get_current_user)):
     return {"status": "ok"}
@@ -53,7 +62,10 @@ def create_unit(
     _: User = Depends(get_current_user),
 ):
     service = get_organization_structure_service(db)
-    organization_unit = service.create_unit(payload)
+    try:
+        organization_unit = service.create_unit(payload)
+    except ValueError as exc:
+        raise_bad_request(exc)
     db.commit()
     db.refresh(organization_unit)
     return organization_unit
@@ -82,7 +94,10 @@ def update_unit(
     _: User = Depends(get_current_user),
 ):
     service = get_organization_structure_service(db)
-    organization_unit = service.update_unit(unit_id, payload)
+    try:
+        organization_unit = service.update_unit(unit_id, payload)
+    except ValueError as exc:
+        raise_bad_request(exc)
     if organization_unit is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -112,7 +127,10 @@ def create_position(
     _: User = Depends(get_current_user),
 ):
     service = get_organization_structure_service(db)
-    position = service.create_position(payload)
+    try:
+        position = service.create_position(payload)
+    except ValueError as exc:
+        raise_bad_request(exc)
     db.commit()
     db.refresh(position)
     return position
@@ -141,7 +159,10 @@ def update_position(
     _: User = Depends(get_current_user),
 ):
     service = get_organization_structure_service(db)
-    position = service.update_position(position_id, payload)
+    try:
+        position = service.update_position(position_id, payload)
+    except ValueError as exc:
+        raise_bad_request(exc)
     if position is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -171,7 +192,10 @@ def create_assignment(
     _: User = Depends(get_current_user),
 ):
     service = get_organization_structure_service(db)
-    assignment = service.create_assignment(payload)
+    try:
+        assignment = service.create_assignment(payload)
+    except ValueError as exc:
+        raise_bad_request(exc)
     db.commit()
     db.refresh(assignment)
     return assignment
@@ -200,7 +224,10 @@ def update_assignment(
     _: User = Depends(get_current_user),
 ):
     service = get_organization_structure_service(db)
-    assignment = service.update_assignment(assignment_id, payload)
+    try:
+        assignment = service.update_assignment(assignment_id, payload)
+    except ValueError as exc:
+        raise_bad_request(exc)
     if assignment is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
