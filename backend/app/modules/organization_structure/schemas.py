@@ -71,7 +71,6 @@ class EmployeeAssignmentUpdate(BaseModel):
     position_id: Optional[int] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    is_primary: Optional[bool] = None
     is_active: Optional[bool] = None
 
 
