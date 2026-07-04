@@ -1,3 +1,5 @@
+from fastapi import APIRouter
+
 from app.core.module_registry import ModuleManifest, registry
 from app.modules.user_management.models import (
     UserManagementAuditEvent,
@@ -8,7 +10,7 @@ from app.modules.user_management.models import (
 from .routes import router
 
 
-def get_router():
+def get_router() -> APIRouter:
     return router
 
 

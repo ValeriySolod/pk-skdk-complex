@@ -1,4 +1,4 @@
-"""Repository skeletons for the user management module."""
+"""Repositories for the user management module."""
 
 from __future__ import annotations
 
@@ -250,12 +250,6 @@ class UserManagementRepository:
         self.profiles = UserManagementProfileRepository(db)
         self.role_assignments = UserManagementRoleAssignmentRepository(db)
         self.audit_events = UserManagementAuditEventRepository(db)
-
-    def list_users(self) -> list[User]:
-        return self.users.list()
-
-    def get_user(self, user_id: int) -> User | None:
-        return self.users.get_by_id(user_id)
 
 
 __all__ = [
