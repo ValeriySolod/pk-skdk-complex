@@ -14,3 +14,4 @@ import app.modules.workflow
 import app.modules.organization_structure
 import app.modules.user_management
 import app.modules.document_management
+import app.modules.audit_log
