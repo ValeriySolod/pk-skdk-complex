@@ -1,4 +1,4 @@
-"""Domain model skeletons for the notifications module."""
+"""Domain models for the notifications module."""
 
 from __future__ import annotations
 
