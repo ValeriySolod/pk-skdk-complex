@@ -2,6 +2,16 @@ from fastapi import APIRouter
 
 from app.core.module_registry import ModuleManifest, registry
 
+from .models import (
+    Notification,
+    NotificationChannel,
+    NotificationDelivery,
+    NotificationDeliveryStatus,
+    NotificationPriority,
+    NotificationProvider,
+    NotificationStatus,
+    NotificationType,
+)
 from .routes import router
 
 
@@ -20,4 +30,14 @@ registry.register(
 )
 
 
-__all__ = ["get_router"]
+__all__ = [
+    "Notification",
+    "NotificationChannel",
+    "NotificationDelivery",
+    "NotificationDeliveryStatus",
+    "NotificationPriority",
+    "NotificationProvider",
+    "NotificationStatus",
+    "NotificationType",
+    "get_router",
+]
