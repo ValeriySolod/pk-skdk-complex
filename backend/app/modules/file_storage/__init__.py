@@ -2,6 +2,13 @@ from fastapi import APIRouter
 
 from app.core.module_registry import ModuleManifest, registry
 
+from .models import (
+    FileObject,
+    FileObjectStatus,
+    FileObjectVisibility,
+    StorageProvider,
+    StoredFile,
+)
 from .routes import router
 
 
@@ -18,3 +25,13 @@ registry.register(
         permissions=["file_storage:read"],
     )
 )
+
+
+__all__ = [
+    "FileObject",
+    "FileObjectStatus",
+    "FileObjectVisibility",
+    "StorageProvider",
+    "StoredFile",
+    "get_router",
+]
