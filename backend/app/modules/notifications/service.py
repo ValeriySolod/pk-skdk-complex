@@ -1,4 +1,4 @@
-"""Service layer skeleton for the notifications module."""
+"""Service layer for the notifications module."""
 
 from __future__ import annotations
 
@@ -308,6 +308,9 @@ class NotificationsService:
     def get_delivery_by_id(self, delivery_id: int) -> NotificationDelivery | None:
         return self.get_delivery(delivery_id)
 
+    def delivery_exists(self, delivery_id: int) -> bool:
+        return self.repository.deliveries.exists(delivery_id)
+
     def get_delivery_by_uuid(
         self,
         delivery_uuid: UUID,
@@ -437,8 +440,6 @@ class NotificationsService:
             provider_response=provider_response,
         )
 
-    def delivery_exists(self, delivery_id: int) -> bool:
-        return self.repository.deliveries.exists(delivery_id)
 
 
 __all__ = ["NotificationsService"]

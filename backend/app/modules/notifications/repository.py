@@ -1,4 +1,4 @@
-"""Repository skeletons for the notifications module."""
+"""Repository operations for the notifications module."""
 
 from __future__ import annotations
 
@@ -505,7 +505,7 @@ class NotificationsRepository:
         self.deliveries = NotificationDeliveryRepository(db)
 
     def health(self) -> bool:
-        return self.db.scalar(select(1)) == 1
+        return self.notifications.health() and self.deliveries.health()
 
 
 __all__ = [
