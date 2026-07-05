@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.core.module_registry import ModuleManifest, registry
+from app.modules.audit_log.models import AuditLogEvent
 
 from .routes import router
 
@@ -18,3 +19,6 @@ registry.register(
         permissions=["audit_log:read"],
     )
 )
+
+
+__all__ = ["AuditLogEvent"]
