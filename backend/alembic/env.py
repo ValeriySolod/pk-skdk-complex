@@ -13,6 +13,7 @@ import app.modules.organization_structure.models  # noqa: F401
 import app.modules.user_management.models  # noqa: F401
 import app.modules.document_management.models  # noqa: F401
 import app.modules.audit_log.models  # noqa: F401
+import app.modules.file_storage.models  # noqa: F401
 
 
 config = context.config
