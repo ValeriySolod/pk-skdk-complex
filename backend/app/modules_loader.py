@@ -16,3 +16,4 @@ import app.modules.user_management
 import app.modules.document_management
 import app.modules.audit_log
 import app.modules.file_storage
+import app.modules.notifications
