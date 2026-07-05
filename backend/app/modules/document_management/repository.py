@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.modules.document_management.models import (
@@ -21,32 +22,65 @@ class DocumentRepository:
         self.db = db
 
     def create(self, document: Document) -> Document:
-        raise NotImplementedError
+        self.db.add(document)
+        self.db.flush()
+        return document
 
     def update(
         self,
         document_id: int,
         values: Mapping[str, object],
     ) -> Document | None:
-        raise NotImplementedError
+        document = self.get_by_id(document_id)
+        if document is None:
+            return None
+
+        for field, value in values.items():
+            setattr(document, field, value)
+
+        self.db.flush()
+        return document
 
     def delete(self, document_id: int) -> bool:
-        raise NotImplementedError
+        document = self.get_by_id(document_id)
+        if document is None:
+            return False
+
+        self.db.delete(document)
+        self.db.flush()
+        return True
 
     def get_by_id(self, document_id: int) -> Document | None:
-        raise NotImplementedError
+        return self.db.get(Document, document_id)
 
     def get_by_uuid(self, document_uuid: UUID) -> Document | None:
-        raise NotImplementedError
+        uuid_column = getattr(Document, "document_uuid", None)
+        if uuid_column is None:
+            uuid_column = getattr(Document, "uuid", None)
+        if uuid_column is None:
+            return None
+
+        return self.db.scalar(select(Document).where(uuid_column == document_uuid))
 
     def list(self) -> Sequence[Document]:
-        raise NotImplementedError
+        return list(self.db.scalars(select(Document).order_by(Document.id)).all())
 
     def search(self, query: str) -> Sequence[Document]:
-        raise NotImplementedError
+        pattern = f"%{query}%"
+        return list(
+            self.db.scalars(
+                select(Document)
+                .where(
+                    Document.title.ilike(pattern)
+                    | Document.document_number.ilike(pattern)
+                    | Document.description.ilike(pattern),
+                )
+                .order_by(Document.id),
+            ).all(),
+        )
 
     def exists(self, document_id: int) -> bool:
-        raise NotImplementedError
+        return self.get_by_id(document_id) is not None
 
 
 class DocumentVersionRepository:
@@ -56,22 +90,34 @@ class DocumentVersionRepository:
         self.db = db
 
     def get_by_id(self, document_version_id: int) -> DocumentVersion | None:
-        raise NotImplementedError
+        return self.db.get(DocumentVersion, document_version_id)
 
     def list_by_document_id(self, document_id: int) -> Sequence[DocumentVersion]:
-        raise NotImplementedError
+        return list(
+            self.db.scalars(
+                select(DocumentVersion)
+                .where(DocumentVersion.document_id == document_id)
+                .order_by(DocumentVersion.id),
+            ).all(),
+        )
 
     def create(self, document_version: DocumentVersion) -> DocumentVersion:
-        raise NotImplementedError
+        self.db.add(document_version)
+        self.db.flush()
+        return document_version
 
     def create_version(self, document_version: DocumentVersion) -> DocumentVersion:
-        raise NotImplementedError
+        return self.create(document_version)
 
     def get_latest(self, document_id: int) -> DocumentVersion | None:
-        raise NotImplementedError
+        return self.db.scalar(
+            select(DocumentVersion)
+            .where(DocumentVersion.document_id == document_id)
+            .order_by(DocumentVersion.id.desc()),
+        )
 
     def list_versions(self, document_id: int) -> Sequence[DocumentVersion]:
-        raise NotImplementedError
+        return self.list_by_document_id(document_id)
 
 
 class DocumentCategoryRepository:
@@ -81,23 +127,41 @@ class DocumentCategoryRepository:
         self.db = db
 
     def create(self, category: DocumentCategory) -> DocumentCategory:
-        raise NotImplementedError
+        self.db.add(category)
+        self.db.flush()
+        return category
 
     def update(
         self,
         category_id: int,
         values: Mapping[str, object],
     ) -> DocumentCategory | None:
-        raise NotImplementedError
+        category = self.get_by_id(category_id)
+        if category is None:
+            return None
+
+        for field, value in values.items():
+            setattr(category, field, value)
+
+        self.db.flush()
+        return category
 
     def delete(self, category_id: int) -> bool:
-        raise NotImplementedError
+        category = self.get_by_id(category_id)
+        if category is None:
+            return False
+
+        self.db.delete(category)
+        self.db.flush()
+        return True
 
     def get_tree(self) -> Sequence[DocumentCategory]:
-        raise NotImplementedError
+        return list(
+            self.db.scalars(select(DocumentCategory).order_by(DocumentCategory.id)).all(),
+        )
 
     def get_by_id(self, category_id: int) -> DocumentCategory | None:
-        raise NotImplementedError
+        return self.db.get(DocumentCategory, category_id)
 
 
 class DocumentAttachmentRepository:
@@ -107,13 +171,27 @@ class DocumentAttachmentRepository:
         self.db = db
 
     def add_attachment(self, document_version: DocumentVersion) -> DocumentVersion:
-        raise NotImplementedError
+        self.db.add(document_version)
+        self.db.flush()
+        return document_version
 
     def remove_attachment(self, document_version_id: int) -> bool:
-        raise NotImplementedError
+        document_version = self.db.get(DocumentVersion, document_version_id)
+        if document_version is None:
+            return False
+
+        self.db.delete(document_version)
+        self.db.flush()
+        return True
 
     def list_for_document(self, document_id: int) -> Sequence[DocumentVersion]:
-        raise NotImplementedError
+        return list(
+            self.db.scalars(
+                select(DocumentVersion)
+                .where(DocumentVersion.document_id == document_id)
+                .order_by(DocumentVersion.id),
+            ).all(),
+        )
 
 
 __all__ = [
