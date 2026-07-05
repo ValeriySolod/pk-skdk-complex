@@ -23,6 +23,7 @@ from app import models as _models  # noqa: E402, F401
 from app.modules.organization_structure import (  # noqa: E402, F401
     models as _organization_structure_models,
 )
+from app.modules.document_management import models as _document_management_models  # noqa: E402, F401
 from app.modules.user_management import models as _user_management_models  # noqa: E402, F401
 
 

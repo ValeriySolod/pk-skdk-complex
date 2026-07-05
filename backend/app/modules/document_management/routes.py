@@ -19,9 +19,16 @@ from app.modules.document_management.repository import (
     DocumentVersionRepository,
 )
 from app.modules.document_management.schemas import (
+    DocumentAttachmentCreate,
+    DocumentAttachmentRead,
+    DocumentCategoryCreate,
+    DocumentCategoryRead,
+    DocumentCategoryUpdate,
     DocumentCreate,
+    DocumentManagementHealthRead,
     DocumentResponse,
     DocumentUpdate,
+    DocumentVersionCreate,
     DocumentVersionResponse,
 )
 from app.modules.document_management.service import DocumentManagementService
@@ -55,7 +62,7 @@ def raise_not_found(detail: str) -> NoReturn:
     )
 
 
-@router.get("/health")
+@router.get("/health", response_model=DocumentManagementHealthRead)
 def module_health(_: User = Depends(get_current_user)) -> dict[str, str]:
     return {"status": "ok"}
 
@@ -212,6 +219,31 @@ def list_document_versions(
         raise_not_found("Document not found")
 
 
+@router.post(
+    "/documents/{document_id}/versions",
+    response_model=DocumentVersionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_document_version(
+    document_id: int,
+    payload: DocumentVersionCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> DocumentVersion:
+    service = get_document_management_service(db)
+    if payload.document_id != document_id:
+        raise_bad_request(ValueError("Document id mismatch"))
+    try:
+        document_version = service.create_version(
+            DocumentVersion(**payload.model_dump()),
+        )
+    except ValueError as exc:
+        raise_bad_request(exc)
+    db.commit()
+    db.refresh(document_version)
+    return document_version
+
+
 @router.get(
     "/documents/{document_id}/versions/latest",
     response_model=DocumentVersionResponse,
@@ -242,7 +274,7 @@ def get_document_version(
     return document_version
 
 
-@router.get("/categories", response_model=None)
+@router.get("/categories", response_model=list[DocumentCategoryRead])
 def list_document_categories(
     service: DocumentManagementService = Depends(get_document_management_service),
     _: User = Depends(get_current_user),
@@ -250,7 +282,29 @@ def list_document_categories(
     return service.list_document_categories()
 
 
-@router.get("/categories/{category_id}", response_model=None)
+@router.post(
+    "/categories",
+    response_model=DocumentCategoryRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_document_category(
+    payload: DocumentCategoryCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> DocumentCategory:
+    service = get_document_management_service(db)
+    try:
+        category = service.create_document_category(
+            DocumentCategory(**payload.model_dump()),
+        )
+    except ValueError as exc:
+        raise_bad_request(exc)
+    db.commit()
+    db.refresh(category)
+    return category
+
+
+@router.get("/categories/{category_id}", response_model=DocumentCategoryRead)
 def get_document_category(
     category_id: int,
     service: DocumentManagementService = Depends(get_document_management_service),
@@ -262,9 +316,45 @@ def get_document_category(
     return category
 
 
+@router.patch("/categories/{category_id}", response_model=DocumentCategoryRead)
+def update_document_category(
+    category_id: int,
+    payload: DocumentCategoryUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> DocumentCategory:
+    service = get_document_management_service(db)
+    try:
+        category = service.update_document_category(
+            category_id,
+            payload.model_dump(exclude_unset=True),
+        )
+    except ValueError as exc:
+        raise_bad_request(exc)
+    if category is None:
+        raise_not_found("Document category not found")
+    db.commit()
+    db.refresh(category)
+    return category
+
+
+@router.delete("/categories/{category_id}")
+def delete_document_category(
+    category_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> dict[str, bool]:
+    service = get_document_management_service(db)
+    deleted = service.delete_document_category(category_id)
+    if not deleted:
+        raise_not_found("Document category not found")
+    db.commit()
+    return {"deleted": True}
+
+
 @router.get(
     "/documents/{document_id}/attachments",
-    response_model=list[DocumentVersionResponse],
+    response_model=list[DocumentAttachmentRead],
 )
 def list_document_attachments(
     document_id: int,
@@ -277,9 +367,34 @@ def list_document_attachments(
         raise_not_found("Document not found")
 
 
+@router.post(
+    "/documents/{document_id}/attachments",
+    response_model=DocumentAttachmentRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_document_attachment(
+    document_id: int,
+    payload: DocumentAttachmentCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> DocumentVersion:
+    service = get_document_management_service(db)
+    if payload.document_id != document_id:
+        raise_bad_request(ValueError("Document id mismatch"))
+    try:
+        document_version = service.add_document_attachment(
+            DocumentVersion(**payload.model_dump()),
+        )
+    except ValueError as exc:
+        raise_bad_request(exc)
+    db.commit()
+    db.refresh(document_version)
+    return document_version
+
+
 @router.get(
     "/attachments/{document_version_id}",
-    response_model=DocumentVersionResponse,
+    response_model=DocumentAttachmentRead,
 )
 def get_document_attachment(
     document_version_id: int,
