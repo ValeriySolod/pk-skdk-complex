@@ -112,3 +112,4 @@ Each module task has a unique identifier (`MOD-XXX`) that never changes after be
 | MOD-011.2 | Administration domain models | ✅ | SQLAlchemy domain models added for reference data administration, maintenance tasks, and administrative action events |
 | MOD-011.3 | Administration database migration / Alembic integration | ✅ | Alembic migration added for administration references, maintenance tasks, and administrative action events |
 | MOD-011.4 | Administration repository skeleton | ✅ | SQLAlchemy repository helpers added for administration references, maintenance tasks, and administrative action events |
+| MOD-011.5 | Administration service layer | ✅ | Service boundary for references, maintenance tasks, action events, and aggregate health |
