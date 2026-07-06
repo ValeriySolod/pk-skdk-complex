@@ -16,6 +16,7 @@ import app.modules.audit_log.models  # noqa: F401
 import app.modules.file_storage.models  # noqa: F401
 import app.modules.notifications.models  # noqa: F401
 import app.modules.reporting_analytics.models  # noqa: F401
+import app.modules.administration.models  # noqa: F401
 
 config = context.config
 
