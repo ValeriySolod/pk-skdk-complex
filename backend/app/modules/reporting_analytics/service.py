@@ -17,7 +17,7 @@ from app.modules.reporting_analytics.repository import ReportingAnalyticsReposit
 
 
 class ReportingAnalyticsService:
-    """Thin service boundary for reporting and analytics operations."""
+    """Application service boundary for reporting and analytics operations."""
 
     def __init__(
         self,
@@ -26,7 +26,7 @@ class ReportingAnalyticsService:
         self.repository = repository or ReportingAnalyticsRepository()
 
     def health(self) -> dict[str, str]:
-        """Return service health status."""
+        """Return aggregate module health based on the repository boundary."""
         repository_health = self.repository.health()
 
         if isinstance(repository_health, Mapping):
