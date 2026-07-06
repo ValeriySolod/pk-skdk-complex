@@ -17,3 +17,4 @@ import app.modules.document_management
 import app.modules.audit_log
 import app.modules.file_storage
 import app.modules.notifications
+from app.modules.reporting_analytics.routes import router as reporting_analytics_router
