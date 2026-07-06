@@ -27,6 +27,7 @@ from app.modules.document_management import models as _document_management_model
 from app.modules.audit_log import models as _audit_log_models  # noqa: E402, F401
 from app.modules.user_management import models as _user_management_models  # noqa: E402, F401
 from app.modules.file_storage import models as _file_storage_models  # noqa: E402, F401
+from app.modules.reporting_analytics import models as _reporting_analytics_models  # noqa: E402, F401
 
 
 @pytest.fixture()
