@@ -18,3 +18,4 @@ import app.modules.audit_log
 import app.modules.file_storage
 import app.modules.notifications
 import app.modules.reporting_analytics
+import app.modules.administration
