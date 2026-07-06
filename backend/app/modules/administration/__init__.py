@@ -4,6 +4,14 @@ from fastapi import APIRouter
 
 from app.core.module_registry import ModuleManifest, registry
 
+from .models import (
+    AdminActionEvent,
+    AdminActionStatus,
+    AdministrationReference,
+    AdministrationReferenceStatus,
+    MaintenanceTask,
+    MaintenanceTaskStatus,
+)
 from .routes import router
 
 
@@ -22,4 +30,12 @@ registry.register(
 )
 
 
-__all__ = ["get_router"]
+__all__ = [
+    "AdminActionEvent",
+    "AdminActionStatus",
+    "AdministrationReference",
+    "AdministrationReferenceStatus",
+    "MaintenanceTask",
+    "MaintenanceTaskStatus",
+    "get_router",
+]
