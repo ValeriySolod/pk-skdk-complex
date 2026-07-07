@@ -36,6 +36,9 @@ from app.modules.reporting_analytics import (
 from app.modules.administration import (
     models as _administration_models,
 )  # noqa: E402, F401
+from app.modules.system_settings import (
+    models as _system_settings_models,
+)  # noqa: E402, F401
 
 
 @pytest.fixture()
