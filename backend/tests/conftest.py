@@ -10,7 +10,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 if str(BACKEND_DIR) not in sys.path:
@@ -23,11 +22,20 @@ from app import models as _models  # noqa: E402, F401
 from app.modules.organization_structure import (  # noqa: E402, F401
     models as _organization_structure_models,
 )
-from app.modules.document_management import models as _document_management_models  # noqa: E402, F401
+from app.modules.document_management import (
+    models as _document_management_models,
+)  # noqa: E402, F401
 from app.modules.audit_log import models as _audit_log_models  # noqa: E402, F401
-from app.modules.user_management import models as _user_management_models  # noqa: E402, F401
+from app.modules.user_management import (
+    models as _user_management_models,
+)  # noqa: E402, F401
 from app.modules.file_storage import models as _file_storage_models  # noqa: E402, F401
-from app.modules.reporting_analytics import models as _reporting_analytics_models  # noqa: E402, F401
+from app.modules.reporting_analytics import (
+    models as _reporting_analytics_models,
+)  # noqa: E402, F401
+from app.modules.administration import (
+    models as _administration_models,
+)  # noqa: E402, F401
 
 
 @pytest.fixture()

@@ -114,10 +114,39 @@ class AdminActionEventRead(AdminActionEventBase):
     created_at: datetime
 
 
+class AdministrationReferenceListResponse(BaseModel):
+    """Paginated administration reference response."""
+
+    items: list[AdministrationReferenceRead]
+    total: int
+    limit: int
+    offset: int
+
+
+class MaintenanceTaskListResponse(BaseModel):
+    """Paginated maintenance task response."""
+
+    items: list[MaintenanceTaskRead]
+    total: int
+    limit: int
+    offset: int
+
+
+class AdminActionEventListResponse(BaseModel):
+    """Paginated administration action event response."""
+
+    items: list[AdminActionEventRead]
+    total: int
+    limit: int
+    offset: int
+
+
 class AdministrationHealthRead(BaseModel):
     """Administration module health response."""
 
     status: str
+    module: str | None = None
     references: bool | None = None
     maintenance_tasks: bool | None = None
     action_events: bool | None = None
+    repositories: dict[str, bool] | None = None

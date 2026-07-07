@@ -88,6 +88,11 @@ class AdministrationReference(Base):
         DateTime(timezone=True), nullable=True, index=True
     )
 
+    @property
+    def uuid(self) -> UUID:
+        """Compatibility API UUID alias."""
+        return self.reference_uuid
+
 
 class MaintenanceTask(Base):
     """Administrative maintenance operation request and execution result."""
@@ -156,6 +161,41 @@ class MaintenanceTask(Base):
         DateTime(timezone=True), nullable=True, index=True
     )
 
+    @property
+    def uuid(self) -> UUID:
+        """Compatibility API UUID alias."""
+        return self.task_uuid
+
+    @property
+    def code(self) -> str:
+        """Compatibility API code alias."""
+        return self.operation_type
+
+    @property
+    def title(self) -> str:
+        """Compatibility API title alias."""
+        return self.operation_name
+
+    @property
+    def description(self) -> str | None:
+        """Compatibility API description alias."""
+        return self.error_message
+
+    @property
+    def priority(self) -> str | None:
+        """Compatibility API priority alias."""
+        return None
+
+    @property
+    def scheduled_for(self) -> datetime | None:
+        """Compatibility API scheduled timestamp alias."""
+        return self.requested_at
+
+    @property
+    def metadata_json(self) -> dict[str, Any] | None:
+        """Compatibility API metadata alias."""
+        return self.payload
+
 
 class AdminActionEvent(Base):
     """Lightweight audit-oriented record of an administrative action."""
@@ -212,6 +252,26 @@ class AdminActionEvent(Base):
         server_default=func.now(),
         index=True,
     )
+
+    @property
+    def uuid(self) -> UUID:
+        """Compatibility API UUID alias."""
+        return self.event_uuid
+
+    @property
+    def action(self) -> str:
+        """Compatibility API action alias."""
+        return self.action_type
+
+    @property
+    def description(self) -> str | None:
+        """Compatibility API description alias."""
+        return None
+
+    @property
+    def metadata_json(self) -> dict[str, Any] | None:
+        """Compatibility API metadata alias."""
+        return self.details
 
 
 __all__ = [
