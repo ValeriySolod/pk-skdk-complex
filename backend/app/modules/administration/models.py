@@ -266,13 +266,12 @@ class AdminActionEvent(Base):
     @property
     def description(self) -> str | None:
         """Compatibility API description alias."""
-        return None
+        return self.resource
 
     @property
-    def metadata_json(self) -> dict[str, Any] | None:
+    def metadata_json(self) -> dict[str, Any]:
         """Compatibility API metadata alias."""
         return self.details
-
 
 __all__ = [
     "AdminActionEvent",

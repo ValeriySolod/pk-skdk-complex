@@ -44,7 +44,6 @@ def raise_not_found(detail: str) -> NoReturn:
 @router.get("/health", response_model=AdministrationHealthRead)
 def module_health(
     service: AdministrationService = Depends(get_administration_service),
-    _: User = Depends(get_current_user),
 ) -> dict[str, object]:
     return service.health()
 
@@ -226,6 +225,7 @@ def create_action_event(
             "action_type": data["action"],
             "target_type": data["target_type"],
             "target_id": data.get("target_id"),
+            "resource": data.get("description"),
             "details": data.get("metadata_json") or {},
         }
     )
