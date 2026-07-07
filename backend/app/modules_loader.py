@@ -19,3 +19,4 @@ import app.modules.file_storage
 import app.modules.notifications
 import app.modules.reporting_analytics
 import app.modules.administration
+import app.modules.system_settings
