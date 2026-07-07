@@ -1,10 +1,9 @@
-"""API contract tests for the System Settings module."""
+"""API contract tests for the System Settings module routes and schemas."""
 
 from __future__ import annotations
 
 from collections.abc import Iterator
 from typing import Any
-from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -23,8 +22,8 @@ from app.modules.system_settings.models import (
     SystemSettingValueType,
 )
 from app.modules.system_settings.schemas import (
-    SystemSettingChangeEventCreate,
     SystemSettingChangeEventCountResponse,
+    SystemSettingChangeEventCreate,
     SystemSettingChangeEventListResponse,
     SystemSettingChangeEventRead,
     SystemSettingCountResponse,
@@ -68,7 +67,7 @@ def db_session() -> Iterator[Session]:
 
 @pytest.fixture()
 def client(db_session: Session) -> Iterator[TestClient]:
-    """Create a TestClient with database and authentication overrides."""
+    """Create a TestClient with DB/auth overrides required by the route."""
 
     def override_get_db() -> Iterator[Session]:
         yield db_session
@@ -97,28 +96,34 @@ def test_system_settings_health_contract(client: TestClient) -> None:
     assert response.status_code == 200
     payload = _response_json(response)
 
-    assert payload["module"] == "system_settings"
-    assert payload["status"] == "ok"
-    assert payload["repositories"] == {
-        "settings": True,
-        "defaults": True,
-        "change_events": True,
+    assert payload == {
+        "module": "system_settings",
+        "status": "ok",
+        "repositories": {
+            "settings": True,
+            "defaults": True,
+            "change_events": True,
+        },
     }
 
     schema = SystemSettingsHealthRead.model_validate(payload)
+    assert schema.status == "ok"
     assert schema.module == "system_settings"
     assert schema.repositories == payload["repositories"]
 
 
-def test_system_settings_openapi_contains_health_route(client: TestClient) -> None:
+def test_system_settings_route_is_registered_under_existing_prefix(
+    client: TestClient,
+) -> None:
     response = client.get("/openapi.json")
 
     assert response.status_code == 200
     payload = _response_json(response)
 
-    path = payload["paths"]["/api/v1/system-settings/health"]["get"]
-    assert path["tags"] == ["System Settings"]
-    response_schema = path["responses"]["200"]["content"]["application/json"]["schema"]
+    assert "/api/v1/system-settings/health" in payload["paths"]
+    route = payload["paths"]["/api/v1/system-settings/health"]["get"]
+    assert route["tags"] == ["System Settings"]
+    response_schema = route["responses"]["200"]["content"]["application/json"]["schema"]
     assert response_schema["$ref"].endswith("/SystemSettingsHealthRead")
 
 
@@ -129,7 +134,7 @@ def test_system_settings_schema_importability_contract() -> None:
     assert SystemSettingChangeEventCountResponse(total=0).total == 0
 
 
-def test_system_setting_schemas_contract() -> None:
+def test_system_setting_schemas_validate_and_serialize() -> None:
     create_payload = SystemSettingCreate.model_validate(
         {
             "category": "security",
@@ -148,7 +153,7 @@ def test_system_setting_schemas_contract() -> None:
 
     assert create_payload.value_type == SystemSettingValueType.OBJECT
     assert create_payload.status == SystemSettingStatus.ACTIVE
-    assert create_payload.metadata_json == {"source": "contract-test"}
+    assert create_payload.model_dump(mode="json")["value_type"] == "object"
 
     update_payload = SystemSettingUpdate.model_validate(
         {
@@ -179,20 +184,25 @@ def test_system_setting_schemas_contract() -> None:
     )
 
     assert str(read_payload.uuid) == "00000000-0000-4000-8000-000000000001"
-    assert list_payload.items[0].key == "password_policy"
+    assert list_payload.model_dump(mode="json")["items"][0]["status"] == "active"
 
 
-def test_system_setting_default_schemas_contract() -> None:
-    create_payload = SystemSettingDefaultCreate(
-        category="ui",
-        key="theme",
-        title="Theme",
-        default_value="light",
-        value_type=SystemSettingValueType.STRING,
-        validation_rules={"enum": ["light", "dark"]},
-        status=SystemSettingDefaultStatus.ACTIVE,
-        metadata_json={"source": "contract-test"},
+def test_system_setting_default_schemas_validate_and_serialize() -> None:
+    create_payload = SystemSettingDefaultCreate.model_validate(
+        {
+            "category": "ui",
+            "key": "theme",
+            "title": "Theme",
+            "default_value": "light",
+            "value_type": "string",
+            "validation_rules": {"enum": ["light", "dark"]},
+            "status": "active",
+            "metadata_json": {"source": "contract-test"},
+        }
     )
+
+    assert create_payload.value_type == SystemSettingValueType.STRING
+    assert create_payload.status == SystemSettingDefaultStatus.ACTIVE
 
     update_payload = SystemSettingDefaultUpdate.model_validate(
         {"default_value": "dark", "status": "deprecated"}
@@ -203,7 +213,7 @@ def test_system_setting_default_schemas_contract() -> None:
         {
             **create_payload.model_dump(),
             "id": 1,
-            "uuid": uuid4(),
+            "uuid": "00000000-0000-4000-8000-000000000002",
             "description": None,
             "created_at": "2026-07-07T10:00:00+00:00",
             "updated_at": "2026-07-07T10:01:00+00:00",
@@ -213,11 +223,11 @@ def test_system_setting_default_schemas_contract() -> None:
         items=[read_payload], total=1, limit=10, offset=0
     )
 
-    assert read_payload.key == "theme"
-    assert list_payload.total == 1
+    assert str(read_payload.uuid) == "00000000-0000-4000-8000-000000000002"
+    assert list_payload.model_dump(mode="json")["items"][0]["status"] == "active"
 
 
-def test_system_setting_change_event_schemas_contract() -> None:
+def test_system_setting_change_event_schemas_validate_and_serialize() -> None:
     create_payload = SystemSettingChangeEventCreate.model_validate(
         {
             "system_setting_id": 1,
@@ -236,6 +246,7 @@ def test_system_setting_change_event_schemas_contract() -> None:
     )
 
     assert create_payload.action == SystemSettingChangeAction.UPDATED
+    assert create_payload.model_dump(mode="json")["action"] == "updated"
 
     read_payload = SystemSettingChangeEventRead.model_validate(
         {
@@ -250,4 +261,4 @@ def test_system_setting_change_event_schemas_contract() -> None:
     )
 
     assert str(read_payload.event_uuid) == "00000000-0000-4000-8000-000000000003"
-    assert list_payload.items[0].new_value == {"min_length": 14}
+    assert list_payload.model_dump(mode="json")["items"][0]["action"] == "updated"
