@@ -6,6 +6,7 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.orm import Session
 
+from app.models import User
 from app.modules.system_settings.models import (
     SystemSetting,
     SystemSettingChangeAction,
@@ -23,6 +24,22 @@ def service(db_session: Session) -> SystemSettingsService:
     return SystemSettingsService(SystemSettingsRepository(db_session))
 
 
+def create_test_user(
+    db_session: Session,
+    username: str = "system-settings-service-user",
+) -> User:
+    user = User(
+        username=username,
+        full_name="System Settings Service User",
+        password_hash="not-used",
+        role="test",
+        is_active=True,
+    )
+    db_session.add(user)
+    db_session.flush()
+    return user
+
+
 def create_setting(
     service: SystemSettingsService,
     *,
@@ -30,6 +47,8 @@ def create_setting(
     key: str = "password_policy",
     status: str = SystemSettingStatus.ACTIVE.value,
     value_type: str = SystemSettingValueType.OBJECT.value,
+    created_by_id: int | None = None,
+    updated_by_id: int | None = None,
     created_at: datetime | None = None,
 ) -> SystemSetting:
     return service.create_setting(
@@ -44,6 +63,8 @@ def create_setting(
             "validation_rules": {"required": ["minLength"]},
             "metadata_json": {"scope": "global", "labels": ["auth"]},
             "status": status,
+            "created_by_id": created_by_id,
+            "updated_by_id": updated_by_id,
             "created_at": created_at,
         }
     )
@@ -51,13 +72,23 @@ def create_setting(
 
 def test_system_settings_service_setting_lifecycle_filters_and_json_preservation(
     service: SystemSettingsService,
+    db_session: Session,
 ) -> None:
-    first = create_setting(service, created_at=datetime(2026, 7, 5, 9, 0, 0))
+    creator = create_test_user(db_session)
+    updater = create_test_user(db_session, "system-settings-service-updater")
+    first = create_setting(
+        service,
+        created_by_id=creator.id,
+        updated_by_id=updater.id,
+        created_at=datetime(2026, 7, 5, 9, 0, 0),
+    )
     second = create_setting(
         service,
         category="notifications",
         key="email_enabled",
         value_type=SystemSettingValueType.BOOLEAN.value,
+        created_by_id=creator.id,
+        updated_by_id=creator.id,
         created_at=datetime(2026, 7, 5, 10, 0, 0),
     )
     original_uuid = first.uuid
@@ -80,9 +111,20 @@ def test_system_settings_service_setting_lifecycle_filters_and_json_preservation
     assert service.setting_exists(first.id) is True
     assert service.setting_exists(999) is False
     assert service.list_settings() == [second, first]
+    assert service.list_system_settings(limit=1) == [second]
+    assert service.list_settings(offset=1, limit=1) == [first]
     assert service.list_settings(category="security") == [first]
+    assert service.list_settings(key="email_enabled") == [second]
+    assert service.list_settings(created_by_id=creator.id) == [second, first]
+    assert service.list_settings(updated_by_id=updater.id) == [first]
+    assert service.list_settings(created_from=datetime(2026, 7, 5, 10, 0, 0)) == [
+        second
+    ]
+    assert service.list_settings(created_to=datetime(2026, 7, 5, 9, 0, 0)) == [first]
     assert service.count_settings(status=SystemSettingStatus.ACTIVE.value) == 2
     assert service.count_settings(value_type=SystemSettingValueType.BOOLEAN.value) == 1
+    assert service.count_settings(category="security", created_by_id=creator.id) == 1
+    assert service.count_system_settings(key="missing") == 0
 
     updated = service.update_setting(
         first.id,
@@ -109,6 +151,8 @@ def test_system_settings_service_setting_lifecycle_filters_and_json_preservation
     assert service.get_setting(first.id, include_deleted=True) == first
     assert service.count_settings() == 1
     assert service.count_settings(include_deleted=True) == 2
+    assert service.setting_exists(first.id) is False
+    assert service.setting_exists(first.id, include_deleted=True) is True
     assert service.delete_setting(999) is False
 
 
@@ -149,10 +193,21 @@ def test_system_settings_service_defaults_lookup_filters_and_update(
     assert service.default_exists(first.id) is True
     assert service.default_exists(999) is False
     assert service.list_defaults() == [second, first]
+    assert service.list_setting_defaults(limit=1) == [second]
+    assert service.list_defaults(offset=1, limit=1) == [first]
+    assert service.list_defaults(category="notifications") == [second]
+    assert service.list_defaults(key="password_policy") == [first]
     assert service.list_defaults(status=SystemSettingDefaultStatus.ACTIVE.value) == [
         first
     ]
+    assert service.list_defaults(created_from=datetime(2026, 7, 5, 10, 0, 0)) == [
+        second
+    ]
+    assert service.list_defaults(created_to=datetime(2026, 7, 5, 9, 0, 0)) == [first]
     assert service.count_defaults(value_type=SystemSettingValueType.BOOLEAN.value) == 1
+    assert service.count_setting_defaults(category="security") == 1
+    assert service.count_defaults(status=SystemSettingDefaultStatus.INACTIVE.value) == 1
+    assert service.count_defaults(key="missing") == 0
 
     updated = service.update_default(
         first.id,
@@ -175,7 +230,9 @@ def test_system_settings_service_defaults_lookup_filters_and_update(
 
 def test_system_settings_service_change_events_create_lookup_and_filters(
     service: SystemSettingsService,
+    db_session: Session,
 ) -> None:
+    actor = create_test_user(db_session, "system-settings-service-actor")
     setting = create_setting(service)
     first = service.create_change_event(
         SystemSettingChangeEvent(
@@ -185,7 +242,7 @@ def test_system_settings_service_change_events_create_lookup_and_filters(
             action=SystemSettingChangeAction.CREATED.value,
             old_value=None,
             new_value={"minLength": 12},
-            actor_user_id=7,
+            actor_user_id=actor.id,
             source="admin-ui",
             request_id="req-1",
             correlation_id="corr-1",
@@ -201,7 +258,7 @@ def test_system_settings_service_change_events_create_lookup_and_filters(
             "action": SystemSettingChangeAction.UPDATED.value,
             "old_value": {"minLength": 12},
             "new_value": {"minLength": 14},
-            "actor_user_id": 8,
+            "actor_user_id": actor.id,
             "source": "api",
             "request_id": "req-2",
             "correlation_id": "corr-2",
@@ -219,10 +276,64 @@ def test_system_settings_service_change_events_create_lookup_and_filters(
     assert service.change_event_exists(first.id) is True
     assert service.change_event_exists(999) is False
     assert service.list_change_events(system_setting_id=setting.id) == [second, first]
+    assert service.list_change_events(limit=1) == [second]
+    assert service.list_change_events(offset=1, limit=1) == [first]
     assert service.list_events(action=SystemSettingChangeAction.CREATED.value) == [
+        first
+    ]
+    assert service.list_change_events(actor_user_id=actor.id) == [second, first]
+    assert service.list_change_events(source="api") == [second]
+    assert service.list_change_events(request_id="req-1") == [first]
+    assert service.list_change_events(correlation_id="corr-2") == [second]
+    assert service.list_change_events(
+        created_from=datetime(2026, 7, 5, 10, 0, 0),
+    ) == [second]
+    assert service.list_change_events(created_to=datetime(2026, 7, 5, 9, 0, 0)) == [
         first
     ]
     assert service.count_change_events(category=setting.category) == 2
     assert service.count_events(source="api") == 1
+    assert service.count_change_events(actor_user_id=actor.id) == 2
+    assert service.count_change_events(request_id="missing") == 0
     assert first.metadata_json == {"ip": "127.0.0.1"}
     assert second.new_value == {"minLength": 14}
+
+
+def test_system_settings_service_aggregate_repository_consistency(
+    service: SystemSettingsService,
+    db_session: Session,
+) -> None:
+    setting = create_setting(service)
+    default = service.create_setting_default(
+        {
+            "category": setting.category,
+            "key": "session_timeout",
+            "title": "Session timeout",
+            "default_value": 30,
+            "value_type": SystemSettingValueType.INTEGER.value,
+        }
+    )
+    event = service.create_event(
+        {
+            "system_setting_id": setting.id,
+            "category": setting.category,
+            "key": setting.key,
+            "action": SystemSettingChangeAction.CREATED.value,
+        }
+    )
+
+    assert service.repository.db is db_session
+    assert service.health() == {
+        "module": "system_settings",
+        "status": "ok",
+        "repositories": {
+            "settings": True,
+            "defaults": True,
+            "change_events": True,
+        },
+    }
+    assert service.get_system_setting(setting.id) == setting
+    assert service.get_setting_default(default.id) == default
+    assert service.get_event(event.id) == event
+    assert event.system_setting_id == setting.id
+    assert event.event_uuid != setting.uuid
