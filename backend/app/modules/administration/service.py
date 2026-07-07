@@ -19,7 +19,6 @@ from app.modules.administration.repository import (
     MaintenanceTaskRepository,
 )
 
-
 Payload = Mapping[str, Any]
 
 
@@ -347,8 +346,8 @@ class AdministrationService:
         *,
         actor_user_id: int | None = None,
         action: str | None = None,
-        entity_type: str | None = None,
-        entity_id: str | None = None,
+        target_type: str | None = None,
+        target_id: str | None = None,
         created_from: Any | None = None,
         created_to: Any | None = None,
         limit: int | None = None,
@@ -358,9 +357,9 @@ class AdministrationService:
 
         return self.action_events.list(
             actor_user_id=actor_user_id,
-            action=action,
-            entity_type=entity_type,
-            entity_id=entity_id,
+            action_type=action,
+            target_type=target_type,
+            target_id=target_id,
             created_from=created_from,
             created_to=created_to,
             limit=limit,
@@ -372,8 +371,8 @@ class AdministrationService:
         *,
         actor_user_id: int | None = None,
         action: str | None = None,
-        entity_type: str | None = None,
-        entity_id: str | None = None,
+        target_type: str | None = None,
+        target_id: str | None = None,
         created_from: Any | None = None,
         created_to: Any | None = None,
     ) -> int:
@@ -381,9 +380,9 @@ class AdministrationService:
 
         return self.action_events.count(
             actor_user_id=actor_user_id,
-            action=action,
-            entity_type=entity_type,
-            entity_id=entity_id,
+            action_type=action,
+            target_type=target_type,
+            target_id=target_id,
             created_from=created_from,
             created_to=created_to,
         )

@@ -113,3 +113,5 @@ Each module task has a unique identifier (`MOD-XXX`) that never changes after be
 | MOD-011.3 | Administration database migration / Alembic integration | ✅ | Alembic migration added for administration references, maintenance tasks, and administrative action events |
 | MOD-011.4 | Administration repository skeleton | ✅ | SQLAlchemy repository helpers added for administration references, maintenance tasks, and administrative action events |
 | MOD-011.5 | Administration service layer | ✅ | Service boundary for references, maintenance tasks, action events, and aggregate health |
+| MOD-011.6 | Administration schemas and API contract tests | ✅ | Pydantic API schemas and basic FastAPI contract tests added for administration health/schema surface |
+| MOD-011.7 | Administration API business tests / route integration checks | ✅ | API business/integration tests added for administration health, reference/task/action event persistence, filtering/counts, UUID/id lookups, and missing/invalid input handling |
