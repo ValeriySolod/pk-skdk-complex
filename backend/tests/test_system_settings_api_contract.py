@@ -24,9 +24,12 @@ from app.modules.system_settings.models import (
 )
 from app.modules.system_settings.schemas import (
     SystemSettingChangeEventCreate,
+    SystemSettingChangeEventCountResponse,
     SystemSettingChangeEventListResponse,
     SystemSettingChangeEventRead,
+    SystemSettingCountResponse,
     SystemSettingCreate,
+    SystemSettingDefaultCountResponse,
     SystemSettingDefaultCreate,
     SystemSettingDefaultListResponse,
     SystemSettingDefaultRead,
@@ -119,6 +122,13 @@ def test_system_settings_openapi_contains_health_route(client: TestClient) -> No
     assert response_schema["$ref"].endswith("/SystemSettingsHealthRead")
 
 
+def test_system_settings_schema_importability_contract() -> None:
+    assert SystemSettingsHealthRead(status="ok", module="system_settings").status == "ok"
+    assert SystemSettingCountResponse(total=0).total == 0
+    assert SystemSettingDefaultCountResponse(total=0).total == 0
+    assert SystemSettingChangeEventCountResponse(total=0).total == 0
+
+
 def test_system_setting_schemas_contract() -> None:
     create_payload = SystemSettingCreate.model_validate(
         {
@@ -161,7 +171,12 @@ def test_system_setting_schemas_contract() -> None:
             "deleted_at": None,
         }
     )
-    list_payload = SystemSettingListResponse(items=[read_payload], total=1, limit=10, offset=0)
+    list_payload = SystemSettingListResponse(
+        items=[read_payload],
+        total=1,
+        limit=10,
+        offset=0,
+    )
 
     assert str(read_payload.uuid) == "00000000-0000-4000-8000-000000000001"
     assert list_payload.items[0].key == "password_policy"
