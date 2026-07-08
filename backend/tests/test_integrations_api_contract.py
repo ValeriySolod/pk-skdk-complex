@@ -286,6 +286,13 @@ def test_integrations_routes_are_registered(client: TestClient) -> None:
     assert f"{BASE_URL}/events/{{event_id}}" in paths
     assert f"{BASE_URL}/events/uuid/{{event_uuid}}" in paths
 
+    assert "patch" in paths[f"{BASE_URL}/providers/{{provider_id}}"]
+    assert "delete" in paths[f"{BASE_URL}/providers/{{provider_id}}"]
+    assert "patch" in paths[f"{BASE_URL}/connections/{{connection_id}}"]
+    assert "delete" in paths[f"{BASE_URL}/connections/{{connection_id}}"]
+    assert "patch" in paths[f"{BASE_URL}/sync-jobs/{{job_id}}"]
+    assert "patch" in paths[f"{BASE_URL}/events/{{event_id}}"]
+
     health_route = paths[f"{BASE_URL}/health"]["get"]
     assert health_route["tags"] == ["Integrations"]
     response_schema = health_route["responses"]["200"]["content"]["application/json"][
@@ -490,6 +497,126 @@ def test_integrations_endpoints_return_not_found_and_validation_errors(
     assert missing_event_uuid.json() == {"detail": "Integration event not found"}
     assert create_validation_response.status_code == 422
     assert query_validation_response.status_code == 422
+
+
+def test_integrations_update_and_soft_delete_behavior(client: TestClient) -> None:
+    provider = create_provider(client)
+    connection = create_connection(client, provider["id"])
+    job = create_sync_job(client, connection["id"])
+    event = client.post(
+        f"{BASE_URL}/events",
+        json={
+            "connection_id": connection["id"],
+            "sync_job_id": job["id"],
+            "event_type": "delivery.created",
+            "status": "received",
+        },
+    ).json()
+
+    provider_update = client.patch(
+        f"{BASE_URL}/providers/{provider['id']}",
+        json={"name": "Email Gateway Updated", "metadata_json": {"version": 2}},
+    )
+    connection_update = client.patch(
+        f"{BASE_URL}/connections/{connection['id']}",
+        json={"last_error_message": "temporary upstream error"},
+    )
+    job_update = client.patch(
+        f"{BASE_URL}/sync-jobs/{job['id']}",
+        json={
+            "status": "completed",
+            "records_processed": 3,
+            "result_summary": {"ok": True},
+        },
+    )
+    event_update = client.patch(
+        f"{BASE_URL}/events/{event['id']}",
+        json={"status": "processed", "processing_result": {"accepted": True}},
+    )
+
+    assert provider_update.status_code == 200
+    assert provider_update.json()["name"] == "Email Gateway Updated"
+    assert provider_update.json()["metadata_json"] == {"version": 2}
+    assert connection_update.status_code == 200
+    assert (
+        connection_update.json()["last_error_message"]
+        == "temporary upstream error"
+    )
+    assert job_update.status_code == 200
+    assert job_update.json()["status"] == "completed"
+    assert job_update.json()["records_processed"] == 3
+    assert event_update.status_code == 200
+    assert event_update.json()["status"] == "processed"
+    assert event_update.json()["processing_result"] == {"accepted": True}
+
+    missing_provider_update = client.patch(
+        f"{BASE_URL}/providers/999",
+        json={"name": "Missing"},
+    )
+    missing_connection_delete = client.delete(f"{BASE_URL}/connections/999")
+
+    assert missing_provider_update.status_code == 404
+    assert missing_provider_update.json() == {
+        "detail": "Integration provider not found"
+    }
+    assert missing_connection_delete.status_code == 404
+    assert missing_connection_delete.json() == {
+        "detail": "Integration connection not found"
+    }
+
+    connection_delete = client.delete(f"{BASE_URL}/connections/{connection['id']}")
+    provider_delete = client.delete(f"{BASE_URL}/providers/{provider['id']}")
+
+    assert connection_delete.status_code == 204
+    assert provider_delete.status_code == 204
+    assert client.get(f"{BASE_URL}/connections/{connection['id']}").status_code == 404
+    assert client.get(f"{BASE_URL}/providers/{provider['id']}").status_code == 404
+
+    deleted_connections = client.get(
+        f"{BASE_URL}/connections",
+        params={"include_deleted": True},
+    )
+    deleted_providers = client.get(
+        f"{BASE_URL}/providers",
+        params={"include_deleted": True},
+    )
+
+    assert deleted_connections.status_code == 200
+    assert deleted_connections.json()["total"] == 1
+    assert deleted_connections.json()["items"][0]["deleted_at"] is not None
+    assert deleted_providers.status_code == 200
+    assert deleted_providers.json()["total"] == 1
+    assert deleted_providers.json()["items"][0]["deleted_at"] is not None
+
+
+def test_integrations_unique_conflicts_return_409(client: TestClient) -> None:
+    provider = create_provider(client)
+    duplicate_provider = client.post(
+        f"{BASE_URL}/providers",
+        json={
+            "code": provider["code"],
+            "name": "Duplicate Email Gateway",
+            "provider_type": "email",
+        },
+    )
+    first_connection = create_connection(client, provider["id"])
+    duplicate_connection = client.post(
+        f"{BASE_URL}/connections",
+        json={
+            "provider_id": provider["id"],
+            "name": first_connection["name"],
+            "status": "active",
+        },
+    )
+
+    assert duplicate_provider.status_code == 409
+    assert duplicate_provider.json() == {
+        "detail": "Integration provider with this code already exists"
+    }
+    assert duplicate_connection.status_code == 409
+    assert duplicate_connection.json() == {
+        "detail": "Integration connection with this provider and name already exists"
+    }
 
 
 def test_integrations_schemas_validate_and_serialize() -> None:

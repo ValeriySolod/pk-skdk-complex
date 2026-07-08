@@ -3,7 +3,8 @@
 from typing import NoReturn
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.security import get_current_user
@@ -21,18 +22,22 @@ from app.modules.integrations.schemas import (
     IntegrationConnectionFilterParams,
     IntegrationConnectionListResponse,
     IntegrationConnectionResponse,
+    IntegrationConnectionUpdate,
     IntegrationEventCreate,
     IntegrationEventFilterParams,
     IntegrationEventListResponse,
     IntegrationEventResponse,
+    IntegrationEventUpdate,
     IntegrationProviderCreate,
     IntegrationProviderFilterParams,
     IntegrationProviderListResponse,
     IntegrationProviderResponse,
+    IntegrationProviderUpdate,
     IntegrationSyncJobCreate,
     IntegrationSyncJobFilterParams,
     IntegrationSyncJobListResponse,
     IntegrationSyncJobResponse,
+    IntegrationSyncJobUpdate,
     IntegrationsHealthRead,
 )
 from app.modules.integrations.service import IntegrationsService
@@ -49,6 +54,10 @@ def get_integrations_service(
 
 def raise_not_found(detail: str) -> NoReturn:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
+
+
+def duplicate_integration_error(detail: str) -> HTTPException:
+    return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail)
 
 
 @router.get("/health", response_model=IntegrationsHealthRead)
@@ -93,8 +102,14 @@ def create_provider(
     _: User = Depends(get_current_user),
 ) -> IntegrationProvider:
     service = get_integrations_service(db)
-    provider = service.create_provider(IntegrationProvider(**payload.model_dump()))
-    db.commit()
+    try:
+        provider = service.create_provider(payload.model_dump())
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise duplicate_integration_error(
+            "Integration provider with this code already exists"
+        ) from exc
     db.refresh(provider)
     return provider
 
@@ -124,6 +139,45 @@ def get_provider(
     if provider is None:
         raise_not_found("Integration provider not found")
     return provider
+
+
+@router.patch("/providers/{provider_id}", response_model=IntegrationProviderResponse)
+def update_provider(
+    provider_id: int,
+    payload: IntegrationProviderUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> IntegrationProvider:
+    service = get_integrations_service(db)
+    try:
+        provider = service.update_provider(
+            provider_id,
+            payload.model_dump(exclude_unset=True),
+        )
+        if provider is None:
+            raise_not_found("Integration provider not found")
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise duplicate_integration_error(
+            "Integration provider with this code already exists"
+        ) from exc
+    db.refresh(provider)
+    return provider
+
+
+@router.delete("/providers/{provider_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_provider(
+    provider_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> Response:
+    service = get_integrations_service(db)
+    deleted = service.delete_provider(provider_id)
+    if not deleted:
+        raise_not_found("Integration provider not found")
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/connections", response_model=IntegrationConnectionListResponse)
@@ -160,8 +214,14 @@ def create_connection(
     _: User = Depends(get_current_user),
 ) -> IntegrationConnection:
     service = get_integrations_service(db)
-    connection = service.create_connection(IntegrationConnection(**payload.model_dump()))
-    db.commit()
+    try:
+        connection = service.create_connection(payload.model_dump())
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise duplicate_integration_error(
+            "Integration connection with this provider and name already exists"
+        ) from exc
     db.refresh(connection)
     return connection
 
@@ -194,6 +254,48 @@ def get_connection(
     if connection is None:
         raise_not_found("Integration connection not found")
     return connection
+
+
+@router.patch(
+    "/connections/{connection_id}",
+    response_model=IntegrationConnectionResponse,
+)
+def update_connection(
+    connection_id: int,
+    payload: IntegrationConnectionUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> IntegrationConnection:
+    service = get_integrations_service(db)
+    try:
+        connection = service.update_connection(
+            connection_id,
+            payload.model_dump(exclude_unset=True),
+        )
+        if connection is None:
+            raise_not_found("Integration connection not found")
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise duplicate_integration_error(
+            "Integration connection with this provider and name already exists"
+        ) from exc
+    db.refresh(connection)
+    return connection
+
+
+@router.delete("/connections/{connection_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_connection(
+    connection_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> Response:
+    service = get_integrations_service(db)
+    deleted = service.delete_connection(connection_id)
+    if not deleted:
+        raise_not_found("Integration connection not found")
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/sync-jobs", response_model=IntegrationSyncJobListResponse)
@@ -230,7 +332,7 @@ def create_sync_job(
     _: User = Depends(get_current_user),
 ) -> IntegrationSyncJob:
     service = get_integrations_service(db)
-    job = service.create_sync_job(IntegrationSyncJob(**payload.model_dump()))
+    job = service.create_sync_job(payload.model_dump())
     db.commit()
     db.refresh(job)
     return job
@@ -260,6 +362,22 @@ def get_sync_job(
     job = service.get_sync_job(job_id)
     if job is None:
         raise_not_found("Integration sync job not found")
+    return job
+
+
+@router.patch("/sync-jobs/{job_id}", response_model=IntegrationSyncJobResponse)
+def update_sync_job(
+    job_id: int,
+    payload: IntegrationSyncJobUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> IntegrationSyncJob:
+    service = get_integrations_service(db)
+    job = service.update_sync_job(job_id, payload.model_dump(exclude_unset=True))
+    if job is None:
+        raise_not_found("Integration sync job not found")
+    db.commit()
+    db.refresh(job)
     return job
 
 
@@ -297,7 +415,7 @@ def create_event(
     _: User = Depends(get_current_user),
 ) -> IntegrationEvent:
     service = get_integrations_service(db)
-    event = service.create_event(IntegrationEvent(**payload.model_dump()))
+    event = service.create_event(payload.model_dump())
     db.commit()
     db.refresh(event)
     return event
@@ -327,4 +445,20 @@ def get_event(
     event = service.get_event(event_id)
     if event is None:
         raise_not_found("Integration event not found")
+    return event
+
+
+@router.patch("/events/{event_id}", response_model=IntegrationEventResponse)
+def update_event(
+    event_id: int,
+    payload: IntegrationEventUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> IntegrationEvent:
+    service = get_integrations_service(db)
+    event = service.update_event(event_id, payload.model_dump(exclude_unset=True))
+    if event is None:
+        raise_not_found("Integration event not found")
+    db.commit()
+    db.refresh(event)
     return event
