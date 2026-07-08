@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.core.security import get_current_user
 from app.db.dependencies import get_db
 from app.main import app
+from app.models import User
 from app.modules.integrations.models import (
     IntegrationConnectionStatus,
     IntegrationEventStatus,
@@ -48,11 +49,36 @@ def client(db_session: Session) -> Iterator[TestClient]:
     def override_get_db() -> Iterator[Session]:
         yield db_session
 
-    def override_get_current_user() -> object:
-        return object()
+    def override_get_current_user() -> User:
+        return User(
+            id=1,
+            username="integrations-contract-admin",
+            full_name="Integrations Contract Admin",
+            password_hash="not-used",
+            role="test",
+            is_active=True,
+        )
 
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user
+
+    with TestClient(app) as test_client:
+        yield test_client
+
+    app.dependency_overrides = original_overrides
+
+
+@pytest.fixture()
+def unauthenticated_client(db_session: Session) -> Iterator[TestClient]:
+    """Create a TestClient with DB override but no auth bypass."""
+
+    original_overrides = app.dependency_overrides.copy()
+
+    def override_get_db() -> Iterator[Session]:
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides.pop(get_current_user, None)
 
     with TestClient(app) as test_client:
         yield test_client
@@ -229,6 +255,15 @@ def test_integrations_health_contract(client: TestClient) -> None:
     schema = IntegrationsHealthRead.model_validate(payload)
     assert schema.module == "integrations"
     assert schema.status == "ok"
+
+
+def test_integrations_routes_require_authenticated_user(
+    unauthenticated_client: TestClient,
+) -> None:
+    response = unauthenticated_client.get(f"{BASE_URL}/health")
+
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
 
 
 def test_integrations_routes_are_registered(client: TestClient) -> None:
@@ -417,6 +452,18 @@ def test_integrations_endpoints_return_not_found_and_validation_errors(
     missing_connection = client.get(f"{BASE_URL}/connections/999")
     missing_job = client.get(f"{BASE_URL}/sync-jobs/999")
     missing_event = client.get(f"{BASE_URL}/events/999")
+    missing_provider_uuid = client.get(
+        f"{BASE_URL}/providers/uuid/00000000-0000-4000-8000-000000000001"
+    )
+    missing_connection_uuid = client.get(
+        f"{BASE_URL}/connections/uuid/00000000-0000-4000-8000-000000000002"
+    )
+    missing_job_uuid = client.get(
+        f"{BASE_URL}/sync-jobs/uuid/00000000-0000-4000-8000-000000000003"
+    )
+    missing_event_uuid = client.get(
+        f"{BASE_URL}/events/uuid/00000000-0000-4000-8000-000000000004"
+    )
     create_validation_response = client.post(
         f"{BASE_URL}/providers",
         json={"name": "Missing required code and provider type"},
@@ -431,6 +478,16 @@ def test_integrations_endpoints_return_not_found_and_validation_errors(
     assert missing_job.json() == {"detail": "Integration sync job not found"}
     assert missing_event.status_code == 404
     assert missing_event.json() == {"detail": "Integration event not found"}
+    assert missing_provider_uuid.status_code == 404
+    assert missing_provider_uuid.json() == {"detail": "Integration provider not found"}
+    assert missing_connection_uuid.status_code == 404
+    assert missing_connection_uuid.json() == {
+        "detail": "Integration connection not found"
+    }
+    assert missing_job_uuid.status_code == 404
+    assert missing_job_uuid.json() == {"detail": "Integration sync job not found"}
+    assert missing_event_uuid.status_code == 404
+    assert missing_event_uuid.json() == {"detail": "Integration event not found"}
     assert create_validation_response.status_code == 422
     assert query_validation_response.status_code == 422
 
