@@ -39,6 +39,7 @@ from app.modules.administration import (
 from app.modules.system_settings import (
     models as _system_settings_models,
 )  # noqa: E402, F401
+from app.modules.integrations import models as _integrations_models  # noqa: E402, F401
 
 
 @pytest.fixture()
