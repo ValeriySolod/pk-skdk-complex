@@ -260,10 +260,37 @@ def test_integrations_health_contract(client: TestClient) -> None:
 def test_integrations_routes_require_authenticated_user(
     unauthenticated_client: TestClient,
 ) -> None:
-    response = unauthenticated_client.get(f"{BASE_URL}/health")
+    get_paths = (
+        f"{BASE_URL}/health",
+        f"{BASE_URL}/providers",
+        f"{BASE_URL}/providers/1",
+        f"{BASE_URL}/providers/uuid/00000000-0000-4000-8000-000000000001",
+        f"{BASE_URL}/connections",
+        f"{BASE_URL}/connections/1",
+        f"{BASE_URL}/connections/uuid/00000000-0000-4000-8000-000000000002",
+        f"{BASE_URL}/sync-jobs",
+        f"{BASE_URL}/sync-jobs/1",
+        f"{BASE_URL}/sync-jobs/uuid/00000000-0000-4000-8000-000000000003",
+        f"{BASE_URL}/events",
+        f"{BASE_URL}/events/1",
+        f"{BASE_URL}/events/uuid/00000000-0000-4000-8000-000000000004",
+    )
 
-    assert response.status_code == 401
-    assert response.headers["www-authenticate"] == "Bearer"
+    for path in get_paths:
+        response = unauthenticated_client.get(path)
+        assert response.status_code == 401
+        assert response.headers["www-authenticate"] == "Bearer"
+
+    create_response = unauthenticated_client.post(
+        f"{BASE_URL}/providers",
+        json={
+            "code": "email-gateway",
+            "name": "Email Gateway",
+            "provider_type": "email",
+        },
+    )
+    assert create_response.status_code == 401
+    assert create_response.headers["www-authenticate"] == "Bearer"
 
 
 def test_integrations_routes_are_registered(client: TestClient) -> None:
@@ -616,6 +643,72 @@ def test_integrations_unique_conflicts_return_409(client: TestClient) -> None:
     assert duplicate_connection.status_code == 409
     assert duplicate_connection.json() == {
         "detail": "Integration connection with this provider and name already exists"
+    }
+
+
+def test_integrations_child_routes_validate_parent_records(client: TestClient) -> None:
+    missing_provider_connection = client.post(
+        f"{BASE_URL}/connections",
+        json={
+            "provider_id": 999,
+            "name": "Missing provider connection",
+            "status": "active",
+        },
+    )
+    missing_connection_job = client.post(
+        f"{BASE_URL}/sync-jobs",
+        json={
+            "connection_id": 999,
+            "sync_type": "contacts",
+            "status": "queued",
+        },
+    )
+    missing_connection_event = client.post(
+        f"{BASE_URL}/events",
+        json={
+            "connection_id": 999,
+            "event_type": "delivery.created",
+            "status": "received",
+        },
+    )
+
+    assert missing_provider_connection.status_code == 404
+    assert missing_provider_connection.json() == {
+        "detail": "Integration provider not found"
+    }
+    assert missing_connection_job.status_code == 404
+    assert missing_connection_job.json() == {
+        "detail": "Integration connection not found"
+    }
+    assert missing_connection_event.status_code == 404
+    assert missing_connection_event.json() == {
+        "detail": "Integration connection not found"
+    }
+
+    provider = create_provider(client)
+    connection = create_connection(client, provider["id"])
+
+    missing_sync_job_event = client.post(
+        f"{BASE_URL}/events",
+        json={
+            "connection_id": connection["id"],
+            "sync_job_id": 999,
+            "event_type": "delivery.created",
+            "status": "received",
+        },
+    )
+    invalid_connection_update = client.patch(
+        f"{BASE_URL}/connections/{connection['id']}",
+        json={"provider_id": 999},
+    )
+
+    assert missing_sync_job_event.status_code == 404
+    assert missing_sync_job_event.json() == {
+        "detail": "Integration sync job not found"
+    }
+    assert invalid_connection_update.status_code == 404
+    assert invalid_connection_update.json() == {
+        "detail": "Integration provider not found"
     }
 
 

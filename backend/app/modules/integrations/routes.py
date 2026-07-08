@@ -60,6 +60,10 @@ def duplicate_integration_error(detail: str) -> HTTPException:
     return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail)
 
 
+def integration_write_conflict(detail: str) -> HTTPException:
+    return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail)
+
+
 @router.get("/health", response_model=IntegrationsHealthRead)
 def module_health(
     service: IntegrationsService = Depends(get_integrations_service),
@@ -214,6 +218,8 @@ def create_connection(
     _: User = Depends(get_current_user),
 ) -> IntegrationConnection:
     service = get_integrations_service(db)
+    if service.get_provider(payload.provider_id) is None:
+        raise_not_found("Integration provider not found")
     try:
         connection = service.create_connection(payload.model_dump())
         db.commit()
@@ -267,6 +273,11 @@ def update_connection(
     _: User = Depends(get_current_user),
 ) -> IntegrationConnection:
     service = get_integrations_service(db)
+    if (
+        payload.provider_id is not None
+        and service.get_provider(payload.provider_id) is None
+    ):
+        raise_not_found("Integration provider not found")
     try:
         connection = service.update_connection(
             connection_id,
@@ -332,8 +343,16 @@ def create_sync_job(
     _: User = Depends(get_current_user),
 ) -> IntegrationSyncJob:
     service = get_integrations_service(db)
-    job = service.create_sync_job(payload.model_dump())
-    db.commit()
+    if service.get_connection(payload.connection_id) is None:
+        raise_not_found("Integration connection not found")
+    try:
+        job = service.create_sync_job(payload.model_dump())
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise integration_write_conflict(
+            "Integration sync job could not be persisted"
+        ) from exc
     db.refresh(job)
     return job
 
@@ -373,10 +392,16 @@ def update_sync_job(
     _: User = Depends(get_current_user),
 ) -> IntegrationSyncJob:
     service = get_integrations_service(db)
-    job = service.update_sync_job(job_id, payload.model_dump(exclude_unset=True))
-    if job is None:
-        raise_not_found("Integration sync job not found")
-    db.commit()
+    try:
+        job = service.update_sync_job(job_id, payload.model_dump(exclude_unset=True))
+        if job is None:
+            raise_not_found("Integration sync job not found")
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise integration_write_conflict(
+            "Integration sync job could not be persisted"
+        ) from exc
     db.refresh(job)
     return job
 
@@ -415,8 +440,21 @@ def create_event(
     _: User = Depends(get_current_user),
 ) -> IntegrationEvent:
     service = get_integrations_service(db)
-    event = service.create_event(payload.model_dump())
-    db.commit()
+    if service.get_connection(payload.connection_id) is None:
+        raise_not_found("Integration connection not found")
+    if (
+        payload.sync_job_id is not None
+        and service.get_sync_job(payload.sync_job_id) is None
+    ):
+        raise_not_found("Integration sync job not found")
+    try:
+        event = service.create_event(payload.model_dump())
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise integration_write_conflict(
+            "Integration event could not be persisted"
+        ) from exc
     db.refresh(event)
     return event
 
@@ -456,9 +494,15 @@ def update_event(
     _: User = Depends(get_current_user),
 ) -> IntegrationEvent:
     service = get_integrations_service(db)
-    event = service.update_event(event_id, payload.model_dump(exclude_unset=True))
-    if event is None:
-        raise_not_found("Integration event not found")
-    db.commit()
+    try:
+        event = service.update_event(event_id, payload.model_dump(exclude_unset=True))
+        if event is None:
+            raise_not_found("Integration event not found")
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise integration_write_conflict(
+            "Integration event could not be persisted"
+        ) from exc
     db.refresh(event)
     return event
