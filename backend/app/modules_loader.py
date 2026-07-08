@@ -20,3 +20,4 @@ import app.modules.notifications
 import app.modules.reporting_analytics
 import app.modules.administration
 import app.modules.system_settings
+import app.modules.integrations
