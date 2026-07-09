@@ -22,3 +22,4 @@ import app.modules.administration
 import app.modules.system_settings
 import app.modules.integrations
 import app.modules.backup_restore
+import app.modules.monitoring_health
