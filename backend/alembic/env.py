@@ -20,6 +20,7 @@ import app.modules.administration.models  # noqa: F401
 import app.modules.system_settings.models  # noqa: F401
 import app.modules.integrations.models  # noqa: F401
 import app.modules.backup_restore.models  # noqa: F401
+import app.modules.monitoring_health.models  # noqa: F401
 
 config = context.config
 
