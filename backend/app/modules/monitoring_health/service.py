@@ -13,7 +13,9 @@ class MonitoringHealthService:
         self,
         repository: MonitoringHealthRepository | None = None,
     ) -> None:
-        self.repository = repository or MonitoringHealthRepository()
+        if repository is None:
+            raise ValueError("MonitoringHealthService requires a repository.")
+        self.repository = repository
 
     def health(self) -> MonitoringHealthHealthRead:
         return MonitoringHealthHealthRead(
