@@ -43,6 +43,7 @@ from app.modules.integrations import models as _integrations_models  # noqa: E40
 from app.modules.backup_restore import (
     models as _backup_restore_models,
 )  # noqa: E402, F401
+from app.modules.monitoring_health import models as _monitoring_health_models  # noqa: E402, F401
 
 
 @pytest.fixture()
