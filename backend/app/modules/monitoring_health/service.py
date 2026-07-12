@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from datetime import datetime, timezone
+from math import isfinite
 from typing import Any, TypeVar
 from uuid import UUID
 
@@ -58,7 +59,9 @@ class MonitoringHealthService:
 
     def create_health_check(self, payload: Payload | HealthCheckRecord) -> HealthCheckRecord:
         record = payload if isinstance(payload, HealthCheckRecord) else HealthCheckRecord(**dict(payload))
+        self._require_text(record.component, "component")
         self._validate_enum(record.status, HealthCheckStatus, "health check status")
+        self._validate_non_negative_number(record.response_time_ms, "response_time_ms")
         return self.health_checks.create_record(record)
 
     def get_health_check(self, record_id: int) -> HealthCheckRecord | None:
@@ -103,8 +106,12 @@ class MonitoringHealthService:
             checked_to=checked_to, created_from=created_from, created_to=created_to, search=search)
 
     def update_health_check(self, record_id: int, values: Payload) -> HealthCheckRecord | None:
+        if "component" in values:
+            self._require_text(values["component"], "component")
         if "status" in values:
             self._validate_enum(values["status"], HealthCheckStatus, "health check status")
+        if "response_time_ms" in values:
+            self._validate_non_negative_number(values["response_time_ms"], "response_time_ms")
         return self.health_checks.update(record_id, values)
 
     def mark_health_check_status(self, record_id: int, status: str | HealthCheckStatus) -> HealthCheckRecord | None:
@@ -118,7 +125,9 @@ class MonitoringHealthService:
 
     def create_metric(self, payload: Payload | MonitoringMetric) -> MonitoringMetric:
         metric = payload if isinstance(payload, MonitoringMetric) else MonitoringMetric(**dict(payload))
+        self._require_text(metric.metric_name, "metric_name")
         self._validate_enum(metric.category, MonitoringMetricCategory, "metric category")
+        self._validate_number(metric.value, "value")
         return self.metrics.create_metric(metric)
 
     def get_metric(self, metric_id: int) -> MonitoringMetric | None:
@@ -166,8 +175,12 @@ class MonitoringHealthService:
             created_to=created_to, search=search)
 
     def update_metric(self, metric_id: int, values: Payload) -> MonitoringMetric | None:
+        if "metric_name" in values:
+            self._require_text(values["metric_name"], "metric_name")
         if "category" in values:
             self._validate_enum(values["category"], MonitoringMetricCategory, "metric category")
+        if "value" in values:
+            self._validate_number(values["value"], "value")
         return self.metrics.update(metric_id, values)
 
     def metric_exists(self, metric_id: int) -> bool:
@@ -177,6 +190,7 @@ class MonitoringHealthService:
 
     def create_incident(self, payload: Payload | SystemIncident) -> SystemIncident:
         incident = payload if isinstance(payload, SystemIncident) else SystemIncident(**dict(payload))
+        self._require_text(incident.title, "title")
         self._validate_enum(incident.severity, SystemIncidentSeverity, "incident severity")
         self._validate_enum(incident.status, SystemIncidentStatus, "incident status")
         self._validate_incident_resolution(
@@ -184,6 +198,7 @@ class MonitoringHealthService:
             resolved_at=incident.resolved_at,
             resolution_summary=incident.resolution_summary,
         )
+        self._validate_resolution_timestamp(incident.detected_at, incident.resolved_at)
         return self.incidents.create_incident(incident)
 
     def get_incident(self, incident_id: int) -> SystemIncident | None:
@@ -230,52 +245,35 @@ class MonitoringHealthService:
             created_to=created_to, search=search)
 
     def update_incident(self, incident_id: int, values: Payload) -> SystemIncident | None:
+        incident = self.incidents.get_by_id(incident_id)
+        if incident is None:
+            return None
+        if "title" in values:
+            self._require_text(values["title"], "title")
         if "severity" in values:
             self._validate_enum(values["severity"], SystemIncidentSeverity, "incident severity")
         if "status" in values:
             self._validate_enum(values["status"], SystemIncidentStatus, "incident status")
-        incident = self.incidents.get_by_id(incident_id)
-        if incident is None:
-            return None
-        current_status = self._enum_value(incident.status)
-        effective_status = self._enum_value(values.get("status", incident.status))
-        terminal_statuses = {
-            SystemIncidentStatus.RESOLVED.value,
-            SystemIncidentStatus.CLOSED.value,
-        }
-        is_reopening = (
-            current_status in terminal_statuses
-            and effective_status not in terminal_statuses
-        )
-        update_values = dict(values)
-        if is_reopening:
-            update_values["resolved_at"] = None
-        self._validate_incident_resolution(
-            effective_status,
-            resolved_at=update_values.get("resolved_at", incident.resolved_at),
-            resolution_summary=update_values.get(
-                "resolution_summary", incident.resolution_summary
-            ),
-        )
+        update_values = self._prepare_incident_lifecycle_update(incident, values)
         return self.incidents.update(incident_id, update_values)
 
     def mark_incident_status(
         self, incident_id: int, status: str | SystemIncidentStatus, *,
         resolution_summary: str | None = None, resolved_at: datetime | None = None,
     ) -> SystemIncident | None:
+        incident = self.incidents.get_by_id(incident_id)
+        if incident is None:
+            return None
         self._validate_enum(status, SystemIncidentStatus, "incident status")
         status_value = self._enum_value(status)
         values: dict[str, object] = {"status": status_value}
         if resolution_summary is not None:
             self._require_text(resolution_summary, "resolution_summary")
             values["resolution_summary"] = resolution_summary
-        if status_value in {SystemIncidentStatus.RESOLVED.value, SystemIncidentStatus.CLOSED.value}:
-            values["resolved_at"] = resolved_at or datetime.now(timezone.utc)
-        elif resolved_at is not None:
-            raise ValueError("resolved_at is only valid for resolved or closed incidents.")
-        else:
-            values["resolved_at"] = None
-        return self.incidents.update(incident_id, values)
+        if resolved_at is not None:
+            values["resolved_at"] = resolved_at
+        update_values = self._prepare_incident_lifecycle_update(incident, values)
+        return self.incidents.update(incident_id, update_values)
 
     def incident_exists(self, incident_id: int) -> bool:
         return self.incidents.exists(incident_id)
@@ -333,14 +331,52 @@ class MonitoringHealthService:
         return value.value if isinstance(value, (SystemIncidentStatus, HealthCheckStatus)) else value
 
     @staticmethod
-    def _require_text(value: str, field: str) -> None:
+    def _require_text(value: object, field: str) -> None:
+        if not isinstance(value, str):
+            raise ValueError(f"{field} must be a string.")
         if not value.strip():
             raise ValueError(f"{field} must not be empty.")
 
     @staticmethod
-    def _validate_range(start: datetime | None, end: datetime | None, label: str) -> None:
-        if start is not None and end is not None and start > end:
+    def _validate_number(value: object, field: str) -> None:
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError(f"{field} must be a finite number.")
+        if not isfinite(value):
+            raise ValueError(f"{field} must be a finite number.")
+
+    @classmethod
+    def _validate_non_negative_number(cls, value: object | None, field: str) -> None:
+        if value is None:
+            return
+        cls._validate_number(value, field)
+        if float(value) < 0:
+            raise ValueError(f"{field} must be greater than or equal to zero.")
+
+    @classmethod
+    def _validate_resolution_timestamp(
+        cls,
+        detected_at: object | None, resolved_at: object | None
+    ) -> None:
+        if isinstance(detected_at, datetime) and isinstance(resolved_at, datetime):
+            comparable_detected_at = cls._as_utc(detected_at)
+            comparable_resolved_at = cls._as_utc(resolved_at)
+        else:
+            return
+        if comparable_resolved_at < comparable_detected_at:
+            raise ValueError("resolved_at must be later than or equal to detected_at.")
+
+    @classmethod
+    def _validate_range(cls, start: datetime | None, end: datetime | None, label: str) -> None:
+        if start is not None and end is not None and cls._as_utc(start) > cls._as_utc(end):
             raise ValueError(f"{label}_from must be earlier than or equal to {label}_to.")
+
+    @staticmethod
+    def _as_utc(value: datetime) -> datetime:
+        """Normalize timestamps for comparison; persisted naive values represent UTC."""
+
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
 
     @staticmethod
     def _validate_pagination(limit: int | None, offset: int | None) -> None:
@@ -367,8 +403,48 @@ class MonitoringHealthService:
             raise ValueError(
                 "resolved_at is only valid for resolved or closed incidents."
             )
-        if resolution_summary is not None and not str(resolution_summary).strip():
-            raise ValueError("resolution_summary must not be empty.")
+        if resolution_summary is not None:
+            MonitoringHealthService._require_text(
+                resolution_summary, "resolution_summary"
+            )
+
+    @classmethod
+    def _prepare_incident_lifecycle_update(
+        cls, incident: SystemIncident, values: Payload
+    ) -> dict[str, object]:
+        update_values = dict(values)
+        current_status = cls._enum_value(incident.status)
+        effective_status = cls._enum_value(values.get("status", incident.status))
+        terminal_statuses = {
+            SystemIncidentStatus.RESOLVED.value,
+            SystemIncidentStatus.CLOSED.value,
+        }
+        is_terminal = effective_status in terminal_statuses
+        was_terminal = current_status in terminal_statuses
+
+        if is_terminal and not was_terminal and update_values.get("resolved_at") is None:
+            update_values["resolved_at"] = datetime.now(timezone.utc)
+        elif not is_terminal:
+            if update_values.get("resolved_at") is not None and not was_terminal:
+                raise ValueError(
+                    "resolved_at is only valid for resolved or closed incidents."
+                )
+            update_values["resolved_at"] = None
+
+        effective_resolved_at = update_values.get("resolved_at", incident.resolved_at)
+        effective_summary = update_values.get(
+            "resolution_summary", incident.resolution_summary
+        )
+        cls._validate_incident_resolution(
+            effective_status,
+            resolved_at=effective_resolved_at,
+            resolution_summary=effective_summary,
+        )
+        cls._validate_resolution_timestamp(
+            update_values.get("detected_at", incident.detected_at),
+            effective_resolved_at,
+        )
+        return update_values
 
     @classmethod
     def _validate_incident_filters(cls, severity: object | None, status: object | None,
