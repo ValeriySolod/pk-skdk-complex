@@ -179,6 +179,11 @@ class MonitoringHealthService:
         incident = payload if isinstance(payload, SystemIncident) else SystemIncident(**dict(payload))
         self._validate_enum(incident.severity, SystemIncidentSeverity, "incident severity")
         self._validate_enum(incident.status, SystemIncidentStatus, "incident status")
+        self._validate_incident_resolution(
+            incident.status,
+            resolved_at=incident.resolved_at,
+            resolution_summary=incident.resolution_summary,
+        )
         return self.incidents.create_incident(incident)
 
     def get_incident(self, incident_id: int) -> SystemIncident | None:
@@ -229,7 +234,30 @@ class MonitoringHealthService:
             self._validate_enum(values["severity"], SystemIncidentSeverity, "incident severity")
         if "status" in values:
             self._validate_enum(values["status"], SystemIncidentStatus, "incident status")
-        return self.incidents.update(incident_id, values)
+        incident = self.incidents.get_by_id(incident_id)
+        if incident is None:
+            return None
+        current_status = self._enum_value(incident.status)
+        effective_status = self._enum_value(values.get("status", incident.status))
+        terminal_statuses = {
+            SystemIncidentStatus.RESOLVED.value,
+            SystemIncidentStatus.CLOSED.value,
+        }
+        is_reopening = (
+            current_status in terminal_statuses
+            and effective_status not in terminal_statuses
+        )
+        update_values = dict(values)
+        if is_reopening:
+            update_values["resolved_at"] = None
+        self._validate_incident_resolution(
+            effective_status,
+            resolved_at=update_values.get("resolved_at", incident.resolved_at),
+            resolution_summary=update_values.get(
+                "resolution_summary", incident.resolution_summary
+            ),
+        )
+        return self.incidents.update(incident_id, update_values)
 
     def mark_incident_status(
         self, incident_id: int, status: str | SystemIncidentStatus, *,
@@ -239,11 +267,14 @@ class MonitoringHealthService:
         status_value = self._enum_value(status)
         values: dict[str, object] = {"status": status_value}
         if resolution_summary is not None:
+            self._require_text(resolution_summary, "resolution_summary")
             values["resolution_summary"] = resolution_summary
         if status_value in {SystemIncidentStatus.RESOLVED.value, SystemIncidentStatus.CLOSED.value}:
             values["resolved_at"] = resolved_at or datetime.now(timezone.utc)
         elif resolved_at is not None:
             raise ValueError("resolved_at is only valid for resolved or closed incidents.")
+        else:
+            values["resolved_at"] = None
         return self.incidents.update(incident_id, values)
 
     def incident_exists(self, incident_id: int) -> bool:
@@ -317,6 +348,27 @@ class MonitoringHealthService:
             raise ValueError("limit must be greater than zero.")
         if offset is not None and offset < 0:
             raise ValueError("offset must be greater than or equal to zero.")
+
+    @staticmethod
+    def _validate_incident_resolution(
+        status: object,
+        *,
+        resolved_at: object | None,
+        resolution_summary: object | None,
+    ) -> None:
+        status_value = (
+            status.value if isinstance(status, SystemIncidentStatus) else status
+        )
+        terminal = {
+            SystemIncidentStatus.RESOLVED.value,
+            SystemIncidentStatus.CLOSED.value,
+        }
+        if status_value not in terminal and resolved_at is not None:
+            raise ValueError(
+                "resolved_at is only valid for resolved or closed incidents."
+            )
+        if resolution_summary is not None and not str(resolution_summary).strip():
+            raise ValueError("resolution_summary must not be empty.")
 
     @classmethod
     def _validate_incident_filters(cls, severity: object | None, status: object | None,
