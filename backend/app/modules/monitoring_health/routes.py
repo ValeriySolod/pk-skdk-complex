@@ -20,9 +20,17 @@ def get_monitoring_health_service(db: Session = Depends(get_db)) -> MonitoringHe
 def raise_not_found(detail: str) -> NoReturn:
     raise HTTPException(status_code=404, detail=detail)
 
+def raise_bad_request(exc: ValueError) -> NoReturn:
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=str(exc),
+    ) from exc
+
 def _write(db: Session, create: Any, detail: str) -> Any:
     try:
         result = create(); db.commit(); db.refresh(result); return result
+    except ValueError as exc:
+        db.rollback(); raise_bad_request(exc)
     except IntegrityError as exc:
         db.rollback(); raise HTTPException(status_code=409, detail=detail) from exc
 
@@ -31,8 +39,12 @@ def module_health(service: MonitoringHealthService = Depends(get_monitoring_heal
     return service.health()
 
 def _list(service: MonitoringHealthService, filters: BaseModel, list_name: str, count_name: str, response: type[BaseModel]) -> BaseModel:
-    values = filters.model_dump(); items = getattr(service, list_name)(**values)
-    total = getattr(service, count_name)(**{k:v for k,v in values.items() if k not in {"limit", "offset"}})
+    values = filters.model_dump()
+    try:
+        items = getattr(service, list_name)(**values)
+        total = getattr(service, count_name)(**{k:v for k,v in values.items() if k not in {"limit", "offset"}})
+    except ValueError as exc:
+        raise_bad_request(exc)
     return response(items=items, total=total, limit=values["limit"], offset=values["offset"])
 
 @router.get("/health-checks", response_model=HealthCheckListResponse)
@@ -97,12 +109,20 @@ def get_incident(incident_id: int, service: MonitoringHealthService=Depends(get_
 
 @router.patch("/incidents/{incident_id}", response_model=SystemIncidentRead)
 def update_incident(incident_id: int, payload: SystemIncidentUpdate, db: Session=Depends(get_db), _: User=Depends(get_current_user)) -> SystemIncident:
-    service=get_monitoring_health_service(db); result=service.update_incident(incident_id, payload.model_dump(exclude_unset=True))
+    service=get_monitoring_health_service(db)
+    try:
+        result=service.update_incident(incident_id, payload.model_dump(exclude_unset=True))
+    except ValueError as exc:
+        raise_bad_request(exc)
     if result is None: raise_not_found("Incident not found")
     db.commit(); db.refresh(result); return result
 
 @router.patch("/incidents/{incident_id}/status", response_model=SystemIncidentRead)
 def update_incident_status(incident_id: int, payload: SystemIncidentStatusUpdate, db: Session=Depends(get_db), _: User=Depends(get_current_user)) -> SystemIncident:
-    service=get_monitoring_health_service(db); result=service.mark_incident_status(incident_id, payload.status, **payload.model_dump(exclude={"status"}, exclude_unset=True))
+    service=get_monitoring_health_service(db)
+    try:
+        result=service.mark_incident_status(incident_id, payload.status, **payload.model_dump(exclude={"status"}, exclude_unset=True))
+    except ValueError as exc:
+        raise_bad_request(exc)
     if result is None: raise_not_found("Incident not found")
     db.commit(); db.refresh(result); return result

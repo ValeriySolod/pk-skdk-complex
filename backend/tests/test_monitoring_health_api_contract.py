@@ -119,3 +119,29 @@ def test_full_incident_update_persists_supported_fields(client: TestClient) -> N
     assert persisted.json()["severity"] == "high"
     assert persisted.json()["description"] == "Backlog confirmed"
     assert persisted.json()["metadata_json"] == ["queue", "worker"]
+
+
+def test_service_validation_errors_are_translated_to_bad_request(
+    client: TestClient,
+) -> None:
+    incident = client.post(
+        f"{BASE_URL}/incidents",
+        json={"title": "Network outage"},
+    ).json()
+
+    blank_summary = client.patch(
+        f"{BASE_URL}/incidents/{incident['id']}",
+        json={"resolution_summary": "   "},
+    )
+    assert blank_summary.status_code == 400
+    assert blank_summary.json()["detail"] == "resolution_summary must not be empty."
+
+    invalid_range = client.get(
+        f"{BASE_URL}/health-checks",
+        params={
+            "checked_from": "2026-07-12T12:00:00Z",
+            "checked_to": "2026-07-12T11:00:00Z",
+        },
+    )
+    assert invalid_range.status_code == 400
+    assert "checked_from" in invalid_range.json()["detail"]
