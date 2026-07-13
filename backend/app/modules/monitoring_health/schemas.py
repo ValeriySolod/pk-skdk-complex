@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .models import (HealthCheckStatus, MonitoringMetricCategory,
                      SystemIncidentSeverity, SystemIncidentStatus)
@@ -31,6 +31,13 @@ class HealthCheckUpdate(BaseModel):
     message: str | None = None
     details: Any | None = None
     checked_at: datetime | None = None
+
+    @field_validator("component", "status", "checked_at")
+    @classmethod
+    def reject_null_required_fields(cls, value: object) -> object:
+        if value is None:
+            raise ValueError("field may not be null")
+        return value
 
 
 class HealthCheckStatusUpdate(BaseModel):
@@ -70,6 +77,13 @@ class MonitoringMetricUpdate(BaseModel):
     labels: Any | None = None
     details: Any | None = None
     recorded_at: datetime | None = None
+
+    @field_validator("metric_name", "category", "value", "recorded_at")
+    @classmethod
+    def reject_null_required_fields(cls, value: object) -> object:
+        if value is None:
+            raise ValueError("field may not be null")
+        return value
 
 
 class MonitoringMetricRead(BaseModel):
@@ -111,6 +125,13 @@ class SystemIncidentUpdate(BaseModel):
     metadata_json: Any | None = None
     detected_at: datetime | None = None
     resolved_at: datetime | None = None
+
+    @field_validator("title", "severity", "status", "detected_at")
+    @classmethod
+    def reject_null_required_fields(cls, value: object) -> object:
+        if value is None:
+            raise ValueError("field may not be null")
+        return value
 
 
 class SystemIncidentStatusUpdate(BaseModel):

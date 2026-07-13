@@ -34,6 +34,19 @@ def _write(db: Session, create: Any, detail: str) -> Any:
     except IntegrityError as exc:
         db.rollback(); raise HTTPException(status_code=409, detail=detail) from exc
 
+def _commit_update(db: Session, update: Any, detail: str) -> Any:
+    try:
+        result = update()
+        if result is None:
+            return None
+        db.commit()
+        db.refresh(result)
+        return result
+    except ValueError as exc:
+        db.rollback(); raise_bad_request(exc)
+    except IntegrityError as exc:
+        db.rollback(); raise HTTPException(status_code=409, detail=detail) from exc
+
 @router.get("/health", response_model=MonitoringHealthHealthRead)
 def module_health(service: MonitoringHealthService = Depends(get_monitoring_health_service), _: User = Depends(get_current_user)) -> MonitoringHealthHealthRead:
     return service.health()
@@ -67,6 +80,13 @@ def get_health_check(record_id: int, service: MonitoringHealthService=Depends(ge
     if result is None: raise_not_found("Health check not found")
     return result
 
+@router.patch("/health-checks/{record_id}", response_model=HealthCheckRead)
+def update_health_check(record_id: int, payload: HealthCheckUpdate, db: Session=Depends(get_db), _: User=Depends(get_current_user)) -> HealthCheckRecord:
+    service=get_monitoring_health_service(db)
+    result=_commit_update(db, lambda: service.update_health_check(record_id, payload.model_dump(exclude_unset=True)), "Health check could not be updated")
+    if result is None: raise_not_found("Health check not found")
+    return result
+
 @router.get("/metrics", response_model=MonitoringMetricListResponse)
 def list_metrics(filters: MonitoringMetricFilterParams=Depends(), service: MonitoringHealthService=Depends(get_monitoring_health_service), _: User=Depends(get_current_user)) -> BaseModel:
     return _list(service, filters, "list_metrics", "count_metrics", MonitoringMetricListResponse)
@@ -84,6 +104,13 @@ def get_metric_uuid(metric_uuid: UUID, service: MonitoringHealthService=Depends(
 @router.get("/metrics/{metric_id}", response_model=MonitoringMetricRead)
 def get_metric(metric_id: int, service: MonitoringHealthService=Depends(get_monitoring_health_service), _: User=Depends(get_current_user)) -> MonitoringMetric:
     result=service.get_metric(metric_id)
+    if result is None: raise_not_found("Metric not found")
+    return result
+
+@router.patch("/metrics/{metric_id}", response_model=MonitoringMetricRead)
+def update_metric(metric_id: int, payload: MonitoringMetricUpdate, db: Session=Depends(get_db), _: User=Depends(get_current_user)) -> MonitoringMetric:
+    service=get_monitoring_health_service(db)
+    result=_commit_update(db, lambda: service.update_metric(metric_id, payload.model_dump(exclude_unset=True)), "Metric could not be updated")
     if result is None: raise_not_found("Metric not found")
     return result
 
@@ -110,19 +137,13 @@ def get_incident(incident_id: int, service: MonitoringHealthService=Depends(get_
 @router.patch("/incidents/{incident_id}", response_model=SystemIncidentRead)
 def update_incident(incident_id: int, payload: SystemIncidentUpdate, db: Session=Depends(get_db), _: User=Depends(get_current_user)) -> SystemIncident:
     service=get_monitoring_health_service(db)
-    try:
-        result=service.update_incident(incident_id, payload.model_dump(exclude_unset=True))
-    except ValueError as exc:
-        raise_bad_request(exc)
+    result=_commit_update(db, lambda: service.update_incident(incident_id, payload.model_dump(exclude_unset=True)), "Incident could not be updated")
     if result is None: raise_not_found("Incident not found")
-    db.commit(); db.refresh(result); return result
+    return result
 
 @router.patch("/incidents/{incident_id}/status", response_model=SystemIncidentRead)
 def update_incident_status(incident_id: int, payload: SystemIncidentStatusUpdate, db: Session=Depends(get_db), _: User=Depends(get_current_user)) -> SystemIncident:
     service=get_monitoring_health_service(db)
-    try:
-        result=service.mark_incident_status(incident_id, payload.status, **payload.model_dump(exclude={"status"}, exclude_unset=True))
-    except ValueError as exc:
-        raise_bad_request(exc)
+    result=_commit_update(db, lambda: service.mark_incident_status(incident_id, payload.status, **payload.model_dump(exclude={"status"}, exclude_unset=True)), "Incident status could not be updated")
     if result is None: raise_not_found("Incident not found")
-    db.commit(); db.refresh(result); return result
+    return result
