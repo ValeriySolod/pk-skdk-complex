@@ -8,12 +8,20 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.security import get_current_user
 from app.db.dependencies import get_db
 from app.main import app
 from app.models import User
+from app.modules.monitoring_health.models import (
+    HealthCheckRecord,
+    MonitoringMetric,
+    SystemIncident,
+)
+from app.modules.monitoring_health.service import MonitoringHealthService
 
 BASE_URL = "/api/v1/monitoring_health"
 
@@ -49,8 +57,10 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
         ("GET", "/health", None),
         ("GET", "/health-checks", None),
         ("POST", "/health-checks", {"component": "api"}),
+        ("PATCH", "/health-checks/1", {"status": "healthy"}),
         ("GET", "/metrics", None),
         ("POST", "/metrics", {"metric_name": "cpu", "value": 1}),
+        ("PATCH", "/metrics/1", {"value": 2}),
         ("GET", "/incidents", None),
         ("POST", "/incidents", {"title": "Outage"}),
         ("PATCH", "/incidents/1", {"status": "investigating"}),
@@ -332,3 +342,272 @@ def test_incident_lifecycle_validation_and_naive_datetime_boundary(
         f"{BASE_URL}/incidents/999999", json={"status": "investigating"}
     )
     assert missing.status_code == 404
+
+
+@pytest.mark.parametrize("field", ["title", "severity", "status", "detected_at"])
+def test_incident_update_rejects_null_for_database_required_fields(
+    client: TestClient, field: str
+) -> None:
+    incident = client.post(
+        f"{BASE_URL}/incidents", json={"title": "Required fields"}
+    ).json()
+
+    response = client.patch(
+        f"{BASE_URL}/incidents/{incident['id']}", json={field: None}
+    )
+
+    assert response.status_code == 422
+    assert client.get(f"{BASE_URL}/incidents/{incident['id']}").status_code == 200
+
+
+@pytest.mark.parametrize("field", ["component", "status", "checked_at"])
+def test_health_check_update_rejects_null_for_database_required_fields(
+    client: TestClient, db_session: Session, field: str
+) -> None:
+    created = client.post(
+        f"{BASE_URL}/health-checks",
+        json={
+            "component": "database",
+            "status": "healthy",
+            "checked_at": "2026-07-13T08:00:00Z",
+        },
+    ).json()
+
+    response = client.patch(
+        f"{BASE_URL}/health-checks/{created['id']}", json={field: None}
+    )
+
+    assert response.status_code == 422
+    assert client.get(f"{BASE_URL}/health-checks/{created['id']}").json() == created
+    assert db_session.execute(text("SELECT 1")).scalar_one() == 1
+
+
+@pytest.mark.parametrize("field", ["metric_name", "category", "value", "recorded_at"])
+def test_metric_update_rejects_null_for_database_required_fields(
+    client: TestClient, db_session: Session, field: str
+) -> None:
+    created = client.post(
+        f"{BASE_URL}/metrics",
+        json={
+            "metric_name": "cpu.usage",
+            "category": "system",
+            "value": 42.5,
+            "recorded_at": "2026-07-13T08:00:00Z",
+        },
+    ).json()
+
+    response = client.patch(
+        f"{BASE_URL}/metrics/{created['id']}", json={field: None}
+    )
+
+    assert response.status_code == 422
+    assert client.get(f"{BASE_URL}/metrics/{created['id']}").json() == created
+    assert db_session.execute(text("SELECT 1")).scalar_one() == 1
+
+
+def test_update_omission_keeps_required_fields(
+    client: TestClient,
+) -> None:
+    health_check = client.post(
+        f"{BASE_URL}/health-checks", json={"component": "api"}
+    ).json()
+    metric = client.post(
+        f"{BASE_URL}/metrics", json={"metric_name": "jobs", "value": 1}
+    ).json()
+
+    updated_health_check = client.patch(
+        f"{BASE_URL}/health-checks/{health_check['id']}", json={"message": "ready"}
+    )
+    updated_metric = client.patch(
+        f"{BASE_URL}/metrics/{metric['id']}", json={"unit": "count"}
+    )
+
+    assert updated_health_check.status_code == 200
+    assert updated_health_check.json()["component"] == health_check["component"]
+    assert updated_health_check.json()["message"] == "ready"
+    assert updated_metric.status_code == 200
+    assert updated_metric.json()["metric_name"] == metric["metric_name"]
+    assert updated_metric.json()["value"] == metric["value"]
+    assert updated_metric.json()["unit"] == "count"
+
+
+@pytest.mark.parametrize(
+    ("resource", "payload", "detail"),
+    [
+        ("health-checks", {"status": "healthy"}, "Health check not found"),
+        ("metrics", {"value": 2}, "Metric not found"),
+    ],
+)
+def test_health_check_and_metric_updates_return_not_found(
+    client: TestClient, resource: str, payload: dict[str, object], detail: str
+) -> None:
+    response = client.patch(f"{BASE_URL}/{resource}/999999", json=payload)
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": detail}
+
+
+@pytest.mark.parametrize(
+    ("resource", "create_payload", "update_method", "update_payload", "error_detail"),
+    [
+        (
+            "health-checks",
+            {"component": "api", "message": "original"},
+            "update_health_check",
+            {"message": "changed"},
+            "invalid health check update",
+        ),
+        (
+            "metrics",
+            {"metric_name": "queue.depth", "value": 3, "unit": "items"},
+            "update_metric",
+            {"unit": "changed"},
+            "invalid metric update",
+        ),
+    ],
+)
+def test_health_check_and_metric_updates_translate_value_errors_and_rollback(
+    client: TestClient,
+    db_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    resource: str,
+    create_payload: dict[str, object],
+    update_method: str,
+    update_payload: dict[str, object],
+    error_detail: str,
+) -> None:
+    created = client.post(f"{BASE_URL}/{resource}", json=create_payload).json()
+    rollback_calls = 0
+    original_rollback = Session.rollback
+
+    def track_rollback(session: Session) -> None:
+        nonlocal rollback_calls
+        rollback_calls += 1
+        original_rollback(session)
+
+    def fail_update(*_: object, **__: object) -> None:
+        raise ValueError(error_detail)
+
+    monkeypatch.setattr(Session, "rollback", track_rollback)
+    monkeypatch.setattr(MonitoringHealthService, update_method, fail_update)
+
+    response = client.patch(
+        f"{BASE_URL}/{resource}/{created['id']}", json=update_payload
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": error_detail}
+    assert rollback_calls == 1
+    assert client.get(f"{BASE_URL}/{resource}/{created['id']}").json() == created
+    assert db_session.execute(text("SELECT 1")).scalar_one() == 1
+
+
+@pytest.mark.parametrize(
+    (
+        "resource",
+        "create_payload",
+        "update_method",
+        "get_method",
+        "update_payload",
+        "mutated_field",
+        "mutated_value",
+        "conflict_detail",
+    ),
+    [
+        (
+            "health-checks",
+            {"component": "api", "message": "original"},
+            "update_health_check",
+            "get_health_check",
+            {"message": "changed"},
+            "message",
+            "changed",
+            "Health check could not be updated",
+        ),
+        (
+            "metrics",
+            {"metric_name": "queue.depth", "value": 3, "unit": "items"},
+            "update_metric",
+            "get_metric",
+            {"unit": "changed"},
+            "unit",
+            "changed",
+            "Metric could not be updated",
+        ),
+    ],
+)
+def test_health_check_and_metric_updates_roll_back_integrity_errors(
+    client: TestClient,
+    db_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    resource: str,
+    create_payload: dict[str, object],
+    update_method: str,
+    get_method: str,
+    update_payload: dict[str, object],
+    mutated_field: str,
+    mutated_value: object,
+    conflict_detail: str,
+) -> None:
+    created = client.post(f"{BASE_URL}/{resource}", json=create_payload).json()
+    rollback_calls = 0
+    original_rollback = Session.rollback
+
+    def track_rollback(session: Session) -> None:
+        nonlocal rollback_calls
+        rollback_calls += 1
+        original_rollback(session)
+
+    def fail_update(
+        service: MonitoringHealthService, entity_id: int, _: object
+    ) -> HealthCheckRecord | MonitoringMetric | None:
+        entity = getattr(service, get_method)(entity_id)
+        assert entity is not None
+        setattr(entity, mutated_field, mutated_value)
+        db_session.flush()
+        raise IntegrityError("forced update failure", {}, RuntimeError("forced"))
+
+    monkeypatch.setattr(Session, "rollback", track_rollback)
+    monkeypatch.setattr(MonitoringHealthService, update_method, fail_update)
+
+    response = client.patch(
+        f"{BASE_URL}/{resource}/{created['id']}", json=update_payload
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": conflict_detail}
+    assert rollback_calls == 1
+    assert client.get(f"{BASE_URL}/{resource}/{created['id']}").json() == created
+    assert db_session.execute(text("SELECT 1")).scalar_one() == 1
+
+
+def test_incident_status_update_rolls_back_integrity_error(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post(
+        f"{BASE_URL}/incidents", json={"title": "Rollback required"}
+    ).json()
+
+    def fail_status_update(
+        service: MonitoringHealthService, incident_id: int, status: object, **_: object
+    ) -> SystemIncident | None:
+        incident = service.get_incident(incident_id)
+        assert incident is not None
+        incident.status = "resolved"
+        incident.resolved_at = datetime.now(timezone.utc)
+        db_session.flush()
+        raise IntegrityError("forced status update failure", {}, RuntimeError("forced"))
+
+    monkeypatch.setattr(MonitoringHealthService, "mark_incident_status", fail_status_update)
+
+    response = client.patch(
+        f"{BASE_URL}/incidents/{created['id']}/status", json={"status": "resolved"}
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Incident status could not be updated"
+    persisted = client.get(f"{BASE_URL}/incidents/{created['id']}")
+    assert persisted.status_code == 200
+    assert persisted.json()["status"] == "open"
+    assert persisted.json()["resolved_at"] is None
+    assert db_session.execute(text("SELECT 1")).scalar_one() == 1
