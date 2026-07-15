@@ -7,6 +7,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     JSON,
     String,
@@ -17,13 +18,14 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.database import Base
+from app.db import Base
 
 
 class UserManagementProfile(Base):
     """Administrative user profile linked to the core auth user account."""
 
     __tablename__ = "user_management_profiles"
+    __table_args__ = (Index("ix_user_management_profiles_user_id", "user_id"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(
@@ -32,12 +34,14 @@ class UserManagementProfile(Base):
 
     display_name: Mapped[str | None] = mapped_column(String(length=255), nullable=True)
     personnel_number: Mapped[str | None] = mapped_column(
-        String(length=80), nullable=True
+        String(length=80), nullable=True, index=True
     )
     job_title: Mapped[str | None] = mapped_column(String(length=255), nullable=True)
     phone_number: Mapped[str | None] = mapped_column(String(length=80), nullable=True)
 
-    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, index=True
+    )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
@@ -68,13 +72,21 @@ class UserManagementRoleAssignment(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), nullable=False, index=True
+    )
 
-    role_code: Mapped[str] = mapped_column(String(length=120), nullable=False)
-    scope_type: Mapped[str | None] = mapped_column(String(length=80), nullable=True)
-    scope_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    role_code: Mapped[str] = mapped_column(
+        String(length=120), nullable=False, index=True
+    )
+    scope_type: Mapped[str | None] = mapped_column(
+        String(length=80), nullable=True, index=True
+    )
+    scope_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
 
-    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, index=True
+    )
     assigned_by_user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id"), nullable=True
     )
@@ -97,13 +109,15 @@ class UserManagementAuditEvent(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
 
     actor_user_id: Mapped[int | None] = mapped_column(
-        ForeignKey("users.id"), nullable=True
+        ForeignKey("users.id"), nullable=True, index=True
     )
     target_user_id: Mapped[int | None] = mapped_column(
-        ForeignKey("users.id"), nullable=True
+        ForeignKey("users.id"), nullable=True, index=True
     )
 
-    event_type: Mapped[str] = mapped_column(String(length=120), nullable=False)
+    event_type: Mapped[str] = mapped_column(
+        String(length=120), nullable=False, index=True
+    )
     summary: Mapped[str | None] = mapped_column(String(length=255), nullable=True)
     details: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB().with_variant(JSON(), "sqlite"),
@@ -114,4 +128,5 @@ class UserManagementAuditEvent(Base):
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
+        index=True,
     )

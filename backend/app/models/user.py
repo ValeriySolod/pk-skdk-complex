@@ -1,7 +1,7 @@
 from enum import Enum
 from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column
-from app.core.database import Base
+from app.db import Base
 
 class Role(str, Enum):
     GU_HEAD = 'ГУУФЗ Начальник'
