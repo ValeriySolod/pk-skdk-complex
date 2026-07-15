@@ -6,7 +6,7 @@ from app.db.dependencies import get_db
 from app.services.database import DatabaseHealthService
 from app.services.health import ApplicationHealthStatus
 from sqlalchemy.orm import Session
-from app.core.database import Base, engine
+from app.db import Base, engine
 from app.api.v1.auth import router as auth_router
 from app.api.v1.health import router as health_router
 from app.api.v1.modules import router as modules_router

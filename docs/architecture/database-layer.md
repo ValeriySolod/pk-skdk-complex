@@ -28,34 +28,34 @@ Pydantic request and response schemas.
 
 ## Package layout
 
-Canonical database exports live in `backend/app/database/`:
+Canonical database exports live in `backend/app/db/`:
 
 ```txt
-backend/app/database/
+backend/app/db/
   __init__.py
   base.py
+  dependencies.py
+  mixins.py
   session.py
 ```
 
-`backend/app/database/base.py` defines:
+`backend/app/db/base.py` defines:
 
 - `Base`
-- `AbstractBaseModel`
-- `IntegerPrimaryKeyMixin`
 - shared metadata with stable constraint naming conventions
 
-`backend/app/database/session.py` defines:
+`backend/app/db/session.py` defines:
 
 - `engine`
 - `SessionLocal`
-- `get_db`
 
-`backend/app/database/__init__.py` re-exports those names for application code.
-New code should import database primitives from `app.database`.
+`backend/app/db/dependencies.py` defines `get_db`, including rollback on request
+failure and unconditional session closure. `backend/app/db/__init__.py` re-exports
+the public database primitives for application code. Application code should
+import database primitives from `app.db`.
 
-`backend/app/core/database.py` remains as a compatibility module and re-exports
-the same objects. Existing imports from `app.core.database` continue to work
-while modules are migrated gradually.
+Legacy `app.database` and `app.core.database` compatibility modules have been
+removed so there is one database abstraction.
 
 ## Models
 
@@ -68,16 +68,19 @@ FastAPI router code or request/response schema definitions.
 ## Engine and sessions
 
 The SQLAlchemy declarative base and shared metadata live in
-`backend/app/database/base.py`. The metadata defines stable names for indexes,
+`backend/app/db/base.py`. The metadata defines stable names for indexes,
 unique constraints, check constraints, foreign keys, and primary keys so future
 Alembic migrations produce predictable operations.
 
-Engine and session configuration lives in `backend/app/database/session.py`.
+Engine and session configuration lives in `backend/app/db/session.py`.
 
 The engine is created from `settings.DATABASE_URL`. SQLite receives the
-`check_same_thread=False` connection argument for local development, while
-PostgreSQL uses the default SQLAlchemy connection behavior. `SessionLocal` is
-configured with `autoflush=False` and `autocommit=False`.
+`check_same_thread=False` connection argument for local development. Genuinely
+in-memory SQLite URLs also use a single shared connection so their schema and
+data remain visible across application threads; file-backed SQLite databases do
+not use that pool configuration. PostgreSQL uses the default SQLAlchemy
+connection behavior. `SessionLocal` is configured with `autoflush=False` and
+`autocommit=False`.
 
 FastAPI routes should receive sessions through `Depends(get_db)`. Application
 code should not create long-lived global sessions.
@@ -107,6 +110,9 @@ release workflow once migration configuration is finalized.
 logic should be idempotent, use the same SQLAlchemy session configuration as the
 application, and avoid replacing migration scripts.
 
-`Base.metadata.create_all(bind=engine)` is still present in existing startup and
-seed paths for current compatibility. It should be revisited when Alembic
-migrations become the authoritative schema management workflow.
+`Base.metadata.create_all(bind=engine)` currently runs when `backend/app/main.py`
+is imported during application startup. The seed entry point does not create or
+upgrade schema: `seed_database` runs registered operations against an existing
+schema and manages their transaction. Alembic remains the production
+schema-management mechanism; startup `create_all` is development compatibility
+behavior rather than a replacement for migrations.

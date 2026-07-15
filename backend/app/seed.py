@@ -16,10 +16,10 @@ SEED_OPERATIONS: tuple[SeedOperation, ...] = ()
 
 def run_seed_operations(
     session: Session,
-    operations: Iterable[SeedOperation] = SEED_OPERATIONS,
+    operations: Iterable[SeedOperation] | None = None,
 ) -> None:
     """Run registered seed operations inside the caller-managed transaction."""
-    for operation in operations:
+    for operation in SEED_OPERATIONS if operations is None else operations:
         operation(session)
 
 

@@ -11,7 +11,7 @@ from sqlalchemy import DateTime, ForeignKey, Index, JSON, String, Text, UniqueCo
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.database import Base
+from app.db import Base
 
 
 json_type = JSONB().with_variant(JSON(), "sqlite")

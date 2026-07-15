@@ -10,7 +10,7 @@ from sqlalchemy import DateTime, ForeignKey, JSON, String, Uuid, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.database import Base
+from app.db import Base
 
 
 class AuditLogEvent(Base):

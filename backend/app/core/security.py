@@ -6,7 +6,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from .config import settings
-from .database import get_db
+from app.db import get_db
 from app.models.user import User, Role
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')

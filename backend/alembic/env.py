@@ -6,28 +6,15 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from app.core.config import settings
-from app.core.database import Base
+from app.db.model_registration import register_models
 
-import app.models  # noqa: F401
-import app.modules.organization_structure.models  # noqa: F401
-import app.modules.user_management.models  # noqa: F401
-import app.modules.document_management.models  # noqa: F401
-import app.modules.audit_log.models  # noqa: F401
-import app.modules.file_storage.models  # noqa: F401
-import app.modules.notifications.models  # noqa: F401
-import app.modules.reporting_analytics.models  # noqa: F401
-import app.modules.administration.models  # noqa: F401
-import app.modules.system_settings.models  # noqa: F401
-import app.modules.integrations.models  # noqa: F401
-import app.modules.backup_restore.models  # noqa: F401
-import app.modules.monitoring_health.models  # noqa: F401
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = Base.metadata
+target_metadata = register_models()
 
 
 def get_database_url() -> str:
