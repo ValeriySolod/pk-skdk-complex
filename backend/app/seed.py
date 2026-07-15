@@ -4,8 +4,6 @@ from collections.abc import Callable, Iterable
 
 from sqlalchemy.orm import Session
 
-from app.db import SessionLocal
-
 
 SeedOperation = Callable[[Session], None]
 SessionFactory = Callable[[], Session]
@@ -23,8 +21,12 @@ def run_seed_operations(
         operation(session)
 
 
-def seed_database(session_factory: SessionFactory = SessionLocal) -> None:
+def seed_database(session_factory: SessionFactory | None = None) -> None:
     """Execute database seed operations manually using the application session."""
+    if session_factory is None:
+        from app.db import SessionLocal
+
+        session_factory = SessionLocal
     session = session_factory()
     try:
         run_seed_operations(session)
