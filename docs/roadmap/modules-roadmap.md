@@ -35,6 +35,7 @@ Each module task has a unique identifier (`MOD-XXX`) that never changes after be
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
 | DEV-001 | Git Bash Workflow Scripts | ✅ | Git Bash helper scripts and documentation created |
+| DEV-002 | Project-wide backend integration and release-readiness sweep | ✅ | Verified application/module registration, unique route methods, authentication boundaries, request-session rollback/closure, canonical 42-table metadata, mapper relationships, the continuous 13-revision Alembic chain, and a clean SQLite upgrade to the single head; removed unversioned schema creation from application startup and documented the Alembic-first release procedure; PostgreSQL execution remains an environment-dependent release check |
 | MOD-003.19 | Database Layer completion / readiness sweep | ✅ | Final database-layer review completed: session rollback/closure, cross-thread in-memory SQLite compatibility, canonical Alembic model registration, complete Document/User ORM-to-migration index parity, 42-table metadata registration, 13-revision Alembic continuity, health behavior, repeatable idempotent registered seed-operation support, focused regressions, and the complete backend suite validated; no production seed records are currently registered |
 | MOD-004.3 | Organization Structure schemas skeleton | ✅ | Pydantic schema skeletons added |
 | MOD-004.4 | Organization Structure repository skeleton | ✅ | SQLAlchemy repository skeletons added |
