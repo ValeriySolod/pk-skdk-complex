@@ -4,8 +4,8 @@ from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
+from sqlalchemy.engine import URL
 
-from app.core.config import settings
 from app.db.model_registration import register_models
 
 
@@ -16,8 +16,18 @@ if config.config_file_name is not None:
 
 target_metadata = register_models()
 
+VALIDATION_DATABASE_URL_ATTRIBUTE = "postgres_release_validation_database_url"
 
-def get_database_url() -> str:
+
+def get_database_url() -> str | URL:
+    validation_url = getattr(config, "attributes", {}).get(
+        VALIDATION_DATABASE_URL_ATTRIBUTE
+    )
+    if validation_url is not None:
+        return validation_url
+
+    from app.core.config import settings
+
     return settings.DATABASE_URL
 
 
