@@ -4,7 +4,7 @@
 
 The backend database layer is built for the existing Python/FastAPI application.
 It uses SQLAlchemy 2.x for ORM mapping and session management, PostgreSQL as the
-target production database, and Alembic as the planned migration tool. The local
+target production database, and Alembic as the migration tool. The local
 default `DATABASE_URL` currently points to SQLite so the backend can run without
 external infrastructure during development.
 
@@ -110,9 +110,12 @@ release workflow once migration configuration is finalized.
 logic should be idempotent, use the same SQLAlchemy session configuration as the
 application, and avoid replacing migration scripts.
 
-`Base.metadata.create_all(bind=engine)` currently runs when `backend/app/main.py`
-is imported during application startup. The seed entry point does not create or
-upgrade schema: `seed_database` runs registered operations against an existing
-schema and manages their transaction. Alembic remains the production
-schema-management mechanism; startup `create_all` is development compatibility
-behavior rather than a replacement for migrations.
+Application startup does not create or upgrade database tables. Before starting
+the application against a new database, run `alembic upgrade head` from the
+`backend` directory. This keeps every schema change versioned and prevents
+partially created schemas from bypassing migration history.
+
+The seed entry point does not create or upgrade schema: `seed_database` runs
+registered operations against an already migrated database and manages their
+transaction. Seed operations must therefore run only after Alembic reaches the
+current head.
