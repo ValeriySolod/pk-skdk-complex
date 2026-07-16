@@ -11,8 +11,8 @@ export interface User {
   username: string;
   full_name: string;
   role: string;
-  department?: string;
-  is_active?: boolean;
+  department: string | null;
+  is_active: boolean;
 }
 
 export async function login(
@@ -33,22 +33,13 @@ export async function login(
   formData.append('username', username);
   formData.append('password', password);
 
-  const API_URL =
-    import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
-
-  const response = await fetch(`${API_URL}/api/v1/auth/login`, {
+  const data = await apiRequest<LoginResponse>('/auth/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error('Невірний логін або пароль');
-  }
-
-  const data = (await response.json()) as LoginResponse;
+  }, { token: () => null });
 
   setToken(data.access_token);
 }
@@ -60,12 +51,12 @@ export async function getMe(): Promise<User> {
       username: 'admin',
       full_name: 'Demo Admin',
       role: 'SYSTEM_ADMIN',
-      department: 'Демо',
+      department: null,
       is_active: true,
     };
   }
 
-  return apiRequest<User>('/api/v1/auth/me');
+  return apiRequest<User>('/auth/me');
 }
 
 export function logout(): void {
