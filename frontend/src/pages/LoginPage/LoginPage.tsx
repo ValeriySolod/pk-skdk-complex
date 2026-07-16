@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { login } from '../../api/auth';
 import css from './LoginPage.module.css';
+import { getLoginErrorMessage } from './loginError';
 
 interface LoginPageProps {
   onLogin: () => void;
@@ -21,8 +22,8 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
       await login(username, password);
       onLogin();
-    } catch {
-      setError('Невірний логін або пароль');
+    } catch (loginError: unknown) {
+      setError(getLoginErrorMessage(loginError));
     } finally {
       setLoading(false);
     }
