@@ -28,6 +28,10 @@
     overflow-x: auto;
 }
 
+.section {
+    margin-top: 32px;
+}
+
 .table {
     width: 100%;
     border-collapse: collapse;

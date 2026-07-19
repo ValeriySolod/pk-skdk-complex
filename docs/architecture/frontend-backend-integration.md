@@ -1,4 +1,4 @@
-# Frontend–backend integration architecture (DEV-005 through DEV-007)
+# Frontend–backend integration architecture (DEV-005 through DEV-008)
 
 ## Scope and evidence
 
@@ -31,7 +31,7 @@ The client attaches the `pk_skdk_token` bearer token unless a caller explicitly 
 
 Client tests use the Node built-in test runner and Node's TypeScript type-stripping support, avoiding another frontend testing dependency. `frontend/package.json` requires Node `>=22.6.0`, the first Node 22 release with this capability, and CI selects Node 22. The test script retains the explicit `--experimental-strip-types` flag for compatibility across supported Node 22 minors.
 
-The older Axios boundary remains temporarily for three legacy module pages and is deprecated by this decision; it must not be used by new code. Migrating those workflows requires endpoint-specific contract work and is outside DEV-005 through DEV-007.
+The older Axios boundary remains temporarily for three legacy module pages and is deprecated by this decision; it must not be used by new code. Migrating those workflows requires endpoint-specific contract work and is outside DEV-005 through DEV-008.
 
 ## First vertical slice: authenticated current-user status (DEV-006)
 
@@ -51,8 +51,16 @@ The page presents deterministic loading, populated success, and empty success st
 
 Focused Node tests cover exact runtime validation, the canonical relative endpoint, demo-path isolation, success/empty states, active and stale 401 side effects, token-preserving 403, and all remaining error classes. Backend contract tests fix the exact serialized list shape and unauthenticated 401 response without changing backend business behavior.
 
+## Positions read-only slice (DEV-008)
+
+DEV-008 preserves the DEV-007 organization-unit behavior on the registered `/organizations` page and adds a second read-only section. With demo mode disabled, `frontend/src/modules/organizations/positionsApi.ts` requests `GET /organization-structure/positions` through the canonical authenticated client, producing `GET /api/v1/organization-structure/positions`. A successful payload must be an array whose every object has exactly the `PositionRead` fields and types: integer `id`, string `title`, nullable string `code`, integer `organization_unit_id`, and boolean `is_active`. Missing, mistyped, or additional fields are rejected before UI state is updated.
+
+Position demo records use an explicitly separate mock loader and do not invoke the canonical request path. The page independently presents positions loading, populated, empty, and retryable error states without coupling them to the organization-unit result. Its error policy distinguishes active and stale 401, 403, malformed success responses, network failure, invalid API configuration, server errors, and unexpected HTTP/runtime failures. Only an active positions request receiving HTTP 401 clears `pk_skdk_token` and redirects to `/login`; stale 401 responses and every other failure preserve the token. Generation invalidation prevents superseded or unmounted positions requests from changing state, clearing the current session, or navigating.
+
+Focused Node tests cover the exact `PositionRead` validator, canonical relative endpoint, isolated demo dispatcher, populated and empty results, retry transitions, all error mappings, active/stale 401 side effects, and stale/unmounted suppression. Backend contract tests fix the exact serialized positions list shape and unauthenticated 401 response without changing backend business behavior. DEV-008 adds no write operation, employee-assignment integration, page redesign, dependency, or backend behavior change.
+
 ## Increment boundaries, risks, and next acceptance criteria
 
-DEV-007 is intentionally limited to the organization-unit read path and its deterministic UI states. Out of scope remain organization-unit writes, positions, employee assignments, UI redesign, API generation, global state libraries, backend behavior changes, auth bypasses, and normalization of unrelated frontend models.
+DEV-008 is intentionally limited to the organization-unit and position read paths and their deterministic UI states. Out of scope remain organization-unit or position writes, employee assignments, UI redesign, API generation, global state libraries, backend behavior changes, auth bypasses, and normalization of unrelated frontend models.
 
 Operational prerequisites remain a migrated database with an active user, a valid CORS origin for the deployed frontend, secure HTTPS deployment, a supplied `VITE_API_URL`, and demo mode disabled outside intentional demos. Automated coverage does not replace a manual deployed-browser check with a real backend session.
