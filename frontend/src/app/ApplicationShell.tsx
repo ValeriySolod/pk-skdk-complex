@@ -27,12 +27,13 @@ export function ApplicationShell({ user, onLogout }: ApplicationShellProps) {
       </div>
 
       <div className={styles.userPanel}>
-        <div className={styles.userText}>
+        <div className={styles.userText} aria-label="Поточний користувач">
           <span className={styles.userName}>{displayName}</span>
-          <span className={styles.userRole}>{user.role}</span>
+          <span className={styles.userDetails}>@{user.username} · Роль: {user.role}</span>
+          {user.department && <span className={styles.userDetails}>Підрозділ: {user.department}</span>}
         </div>
         <button className={styles.logoutButton} type="button" onClick={onLogout}>
-          Logout
+          Вийти
         </button>
       </div>
     </div>
