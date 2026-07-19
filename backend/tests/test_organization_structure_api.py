@@ -97,6 +97,36 @@ def test_organization_unit_create_list_read_update_flow(client: TestClient) -> N
     assert updated_unit["is_active"] is False
 
 
+def test_organization_units_list_exposes_exact_read_contract(client: TestClient) -> None:
+    client.post(
+        "/api/v1/organization-structure/units",
+        json={"name": "Operations", "code": "OPS"},
+    )
+
+    response = client.get("/api/v1/organization-structure/units")
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "id": 1,
+            "name": "Operations",
+            "code": "OPS",
+            "parent_id": None,
+            "is_active": True,
+        },
+    ]
+
+
+def test_organization_units_list_requires_authentication() -> None:
+    with TestClient(app) as unauthenticated_client:
+        response = unauthenticated_client.get(
+            "/api/v1/organization-structure/units",
+        )
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Not authenticated"}
+
+
 def test_position_create_list_read_update_flow(client: TestClient) -> None:
     unit_response = client.post(
         "/api/v1/organization-structure/units",
