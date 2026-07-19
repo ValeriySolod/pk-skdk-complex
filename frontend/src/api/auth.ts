@@ -1,18 +1,11 @@
-import { IS_DEMO_MODE } from '../shared/config';
-import { apiRequest, setToken, removeToken } from './client';
+import { IS_DEMO_MODE } from '../shared/config.ts';
+import { apiRequest, setToken, removeToken } from './client.ts';
+import { InvalidUserResponseError, parseUser, type User } from './userContract.ts';
+export { InvalidUserResponseError, parseUser, type User } from './userContract.ts';
 
 export interface LoginResponse {
   access_token: string;
   token_type: string;
-}
-
-export interface User {
-  id: number;
-  username: string;
-  full_name: string;
-  role: string;
-  department: string | null;
-  is_active: boolean;
 }
 
 export async function login(
@@ -56,7 +49,12 @@ export async function getMe(): Promise<User> {
     };
   }
 
-  return apiRequest<User>('/auth/me');
+  try {
+    return parseUser(await apiRequest<unknown>('/auth/me'));
+  } catch (error: unknown) {
+    if (error instanceof SyntaxError) throw new InvalidUserResponseError();
+    throw error;
+  }
 }
 
 export function logout(): void {

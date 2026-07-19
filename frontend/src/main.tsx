@@ -1,14 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, Navigate, RouterProvider, useLocation } from 'react-router-dom';
 import { ApplicationShell } from './app/ApplicationShell';
+import { CurrentUserStatusPage } from './app/CurrentUserStatusPage';
 import { RouteGuard } from './app/auth/RouteGuard';
+import {
+  createCurrentUserSessionRequestCoordinator,
+  loadCurrentUserSession,
+  type CurrentUserSessionState,
+} from './app/auth/currentUserSession';
 import { AuthGuard } from './app/guards';
 import { HomePage } from './app/HomePage';
 import { isModuleVisibleForRole, modules } from './app/moduleRegistry';
 import LoginPage from './pages/LoginPage/LoginPage';
-import { getMe, logout, type User } from './api/auth';
-import { getToken } from './api/client';
+import { logout, type User } from './api/auth';
 import { ToastProvider } from './shared/ui';
 
 type AppRouterProps = {
@@ -95,26 +100,14 @@ function AppRouter({ user, onLogout, onLogin }: AppRouterProps) {
 }
 
 function Root() {
-  const [user, setUser] = useState<User | null>(null);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [session, setSession] = useState<CurrentUserSessionState>({ status: 'loading' });
+  const requestCoordinator = useRef(createCurrentUserSessionRequestCoordinator(setSession));
 
   async function checkAuth() {
-    try {
-      const token = getToken();
-
-      if (!token) {
-        setUser(null);
-        return;
-      }
-
-      const currentUser = await getMe();
-      setUser(currentUser);
-    } catch {
-      logout();
-      setUser(null);
-    } finally {
-      setCheckingAuth(false);
-    }
+    const request = requestCoordinator.current.begin();
+    setSession({ status: 'loading' });
+    const nextSession = await loadCurrentUserSession(undefined, request.isActive);
+    request.apply(nextSession);
   }
 
   useEffect(() => {
@@ -122,14 +115,20 @@ function Root() {
   }, []);
 
   const handleLogout = useCallback(() => {
+    requestCoordinator.current.invalidate();
     logout();
-    setUser(null);
+    setSession({ status: 'anonymous', reason: 'missing-token' });
   }, []);
 
-  if (checkingAuth) {
-    return <p style={{ padding: 32 }}>Перевірка авторизації...</p>;
+  if (session.status === 'loading') {
+    return <p role="status" style={{ padding: 32 }}>Перевірка авторизації...</p>;
   }
 
+  if (session.status === 'error') {
+    return <CurrentUserStatusPage failure={session.failure} onRetry={checkAuth} onLogout={handleLogout} />;
+  }
+
+  const user = session.status === 'authenticated' ? session.user : null;
   return <AppRouter user={user} onLogout={handleLogout} onLogin={checkAuth} />;
 }
 
