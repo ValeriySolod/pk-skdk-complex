@@ -2,10 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, EmptyState, Loader, PageHeader } from '../../shared/ui';
 import { createOrganizationUnitsPageCoordinator, type OrganizationUnitsPageCoordinator } from './organizationUnitsPageCoordinator.ts';
 import { organizationUnitsErrorMessages, type OrganizationUnitsState } from './organizationUnitsState.ts';
+import { createPositionsPageCoordinator, type PositionsPageCoordinator } from './positionsPageCoordinator.ts';
+import { positionsErrorMessages, type PositionsState } from './positionsState.ts';
 import styles from './OrganizationsPage.module.css';
 
 export function OrganizationsPage() {
   const [state, setState] = useState<OrganizationUnitsState>({ status: 'loading' });
+  const [positionsState, setPositionsState] = useState<PositionsState>({ status: 'loading' });
   const coordinator = useRef<OrganizationUnitsPageCoordinator | null>(null);
   if (coordinator.current === null) {
     coordinator.current = createOrganizationUnitsPageCoordinator({
@@ -13,15 +16,29 @@ export function OrganizationsPage() {
       navigateToLogin: () => window.location.assign('/login'),
     });
   }
+  const positionsCoordinator = useRef<PositionsPageCoordinator | null>(null);
+  if (positionsCoordinator.current === null) {
+    positionsCoordinator.current = createPositionsPageCoordinator({
+      applyState: setPositionsState,
+      navigateToLogin: () => window.location.assign('/login'),
+    });
+  }
 
   const load = useCallback(async () => {
     await coordinator.current?.load();
   }, []);
+  const loadPositions = useCallback(async () => {
+    await positionsCoordinator.current?.load();
+  }, []);
 
   useEffect(() => {
     void load();
-    return () => coordinator.current?.invalidate();
-  }, [load]);
+    void loadPositions();
+    return () => {
+      coordinator.current?.invalidate();
+      positionsCoordinator.current?.invalidate();
+    };
+  }, [load, loadPositions]);
 
   return (
     <div className={styles.page}>
@@ -68,6 +85,49 @@ export function OrganizationsPage() {
           </table>
         </div>
       )}
+
+      <section className={styles.section} aria-labelledby="positions-heading">
+        <h2 id="positions-heading">Positions</h2>
+
+        {positionsState.status === 'loading' && (
+          <div className={styles.status} role="status" aria-live="polite">
+            <Loader />
+            <span>Loading positions...</span>
+          </div>
+        )}
+
+        {positionsState.status === 'error' && (
+          <div className={styles.errorPanel} role="alert">
+            <p>{positionsErrorMessages[positionsState.failure]}</p>
+            <Button type="button" onClick={() => void loadPositions()}>Retry positions</Button>
+          </div>
+        )}
+
+        {positionsState.status === 'success' && positionsState.positions.length === 0 && (
+          <EmptyState title="No positions found" />
+        )}
+
+        {positionsState.status === 'success' && positionsState.positions.length > 0 && (
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr><th>ID</th><th>Title</th><th>Code</th><th>Organization unit ID</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {positionsState.positions.map((position) => (
+                  <tr key={position.id}>
+                    <td>{position.id}</td>
+                    <td>{position.title}</td>
+                    <td>{position.code ?? '—'}</td>
+                    <td>{position.organization_unit_id}</td>
+                    <td>{position.is_active ? 'Active' : 'Inactive'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
