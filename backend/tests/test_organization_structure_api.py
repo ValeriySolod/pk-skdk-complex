@@ -272,6 +272,56 @@ def test_employee_assignment_create_list_read_update_flow(client: TestClient) ->
     assert updated_assignment["is_active"] is False
 
 
+def test_employee_assignments_list_exposes_exact_read_contract(
+    client: TestClient,
+) -> None:
+    unit_response = client.post(
+        "/api/v1/organization-structure/units",
+        json={"name": "Registry", "code": "REG"},
+    )
+    position_response = client.post(
+        "/api/v1/organization-structure/positions",
+        json={
+            "title": "Registrar",
+            "code": "REG-1",
+            "organization_unit_id": unit_response.json()["id"],
+        },
+    )
+    client.post(
+        "/api/v1/organization-structure/assignments",
+        json={
+            "user_id": 1,
+            "position_id": position_response.json()["id"],
+            "start_date": "2026-01-01",
+            "end_date": "2026-12-31",
+        },
+    )
+
+    response = client.get("/api/v1/organization-structure/assignments")
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "id": 1,
+            "user_id": 1,
+            "position_id": position_response.json()["id"],
+            "start_date": "2026-01-01",
+            "end_date": "2026-12-31",
+            "is_active": True,
+        },
+    ]
+
+
+def test_employee_assignments_list_requires_authentication() -> None:
+    with TestClient(app) as unauthenticated_client:
+        response = unauthenticated_client.get(
+            "/api/v1/organization-structure/assignments",
+        )
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Not authenticated"}
+
+
 def test_organization_structure_detail_routes_return_not_found_for_unknown_ids(
     client: TestClient,
 ) -> None:
