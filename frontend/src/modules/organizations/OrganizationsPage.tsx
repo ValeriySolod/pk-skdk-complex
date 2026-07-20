@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, EmptyState, Loader, PageHeader } from '../../shared/ui';
+import { createEmployeeAssignmentsPageCoordinator, type EmployeeAssignmentsPageCoordinator } from './employeeAssignmentsPageCoordinator.ts';
+import { employeeAssignmentsErrorMessages, type EmployeeAssignmentsState } from './employeeAssignmentsState.ts';
 import { createOrganizationUnitsPageCoordinator, type OrganizationUnitsPageCoordinator } from './organizationUnitsPageCoordinator.ts';
 import { organizationUnitsErrorMessages, type OrganizationUnitsState } from './organizationUnitsState.ts';
 import { createPositionsPageCoordinator, type PositionsPageCoordinator } from './positionsPageCoordinator.ts';
@@ -9,6 +11,7 @@ import styles from './OrganizationsPage.module.css';
 export function OrganizationsPage() {
   const [state, setState] = useState<OrganizationUnitsState>({ status: 'loading' });
   const [positionsState, setPositionsState] = useState<PositionsState>({ status: 'loading' });
+  const [employeeAssignmentsState, setEmployeeAssignmentsState] = useState<EmployeeAssignmentsState>({ status: 'loading' });
   const coordinator = useRef<OrganizationUnitsPageCoordinator | null>(null);
   if (coordinator.current === null) {
     coordinator.current = createOrganizationUnitsPageCoordinator({
@@ -23,6 +26,13 @@ export function OrganizationsPage() {
       navigateToLogin: () => window.location.assign('/login'),
     });
   }
+  const employeeAssignmentsCoordinator = useRef<EmployeeAssignmentsPageCoordinator | null>(null);
+  if (employeeAssignmentsCoordinator.current === null) {
+    employeeAssignmentsCoordinator.current = createEmployeeAssignmentsPageCoordinator({
+      applyState: setEmployeeAssignmentsState,
+      navigateToLogin: () => window.location.assign('/login'),
+    });
+  }
 
   const load = useCallback(async () => {
     await coordinator.current?.load();
@@ -30,15 +40,20 @@ export function OrganizationsPage() {
   const loadPositions = useCallback(async () => {
     await positionsCoordinator.current?.load();
   }, []);
+  const loadEmployeeAssignments = useCallback(async () => {
+    await employeeAssignmentsCoordinator.current?.load();
+  }, []);
 
   useEffect(() => {
     void load();
     void loadPositions();
+    void loadEmployeeAssignments();
     return () => {
       coordinator.current?.invalidate();
       positionsCoordinator.current?.invalidate();
+      employeeAssignmentsCoordinator.current?.invalidate();
     };
-  }, [load, loadPositions]);
+  }, [load, loadPositions, loadEmployeeAssignments]);
 
   return (
     <div className={styles.page}>
@@ -121,6 +136,50 @@ export function OrganizationsPage() {
                     <td>{position.code ?? '—'}</td>
                     <td>{position.organization_unit_id}</td>
                     <td>{position.is_active ? 'Active' : 'Inactive'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className={styles.section} aria-labelledby="employee-assignments-heading">
+        <h2 id="employee-assignments-heading">Employee assignments</h2>
+
+        {employeeAssignmentsState.status === 'loading' && (
+          <div className={styles.status} role="status" aria-live="polite">
+            <Loader />
+            <span>Loading employee assignments...</span>
+          </div>
+        )}
+
+        {employeeAssignmentsState.status === 'error' && (
+          <div className={styles.errorPanel} role="alert">
+            <p>{employeeAssignmentsErrorMessages[employeeAssignmentsState.failure]}</p>
+            <Button type="button" onClick={() => void loadEmployeeAssignments()}>Retry employee assignments</Button>
+          </div>
+        )}
+
+        {employeeAssignmentsState.status === 'success' && employeeAssignmentsState.assignments.length === 0 && (
+          <EmptyState title="No employee assignments found" />
+        )}
+
+        {employeeAssignmentsState.status === 'success' && employeeAssignmentsState.assignments.length > 0 && (
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr><th>ID</th><th>User ID</th><th>Position ID</th><th>Start date</th><th>End date</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {employeeAssignmentsState.assignments.map((assignment) => (
+                  <tr key={assignment.id}>
+                    <td>{assignment.id}</td>
+                    <td>{assignment.user_id}</td>
+                    <td>{assignment.position_id}</td>
+                    <td>{assignment.start_date ?? '—'}</td>
+                    <td>{assignment.end_date ?? '—'}</td>
+                    <td>{assignment.is_active ? 'Active' : 'Inactive'}</td>
                   </tr>
                 ))}
               </tbody>
