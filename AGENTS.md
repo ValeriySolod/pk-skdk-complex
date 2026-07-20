@@ -1,46 +1,37 @@
-# AGENTS.md
+# PK SKDK Repository Instructions
 
-## Project
+## Source of truth
 
-ПК СКДК complex.
+- Treat the roadmaps and project documentation in `docs/` as authoritative for scope, architecture, contracts, and completion status.
+- Inspect the relevant roadmap, architecture documents, configuration, tests, and current git status before editing.
+- Keep this file project-wide and stable; do not copy task progress, completed-task lists, test counts, or detailed roadmap and architecture content into it.
 
-Stack:
-- Backend: FastAPI + SQLAlchemy + PostgreSQL
-- Frontend: React + TypeScript + Vite
-- Styling: CSS Modules
-- Routing: React Router
+## Scope and architecture
 
-Architecture:
-- `frontend/src/shared/ui` — reusable universal UI kit
-- `frontend/src/modules` — business modules
-- `frontend/src/app` — app routes and shell
-- `frontend/src/api` — API client layer
-- `backend` — FastAPI backend
-- `docs` — project documentation
+- Deliver one focused, fully completed, independently verifiable increment per task.
+- Make the smallest complete change that satisfies the acceptance criteria; do not add unrelated refactoring, cleanup, renaming, formatting, features, or dependency upgrades.
+- Preserve established user changes and avoid modifying unrelated files.
+- Preserve the existing backend architecture: FastAPI, SQLAlchemy, Alembic, and PostgreSQL, including established router, service, repository, schema, model, transaction, and migration boundaries.
+- Preserve the existing frontend architecture: React, TypeScript, Vite, React Router, and CSS Modules, including established `app`, `pages`, `modules`, `shared`, and API-client boundaries.
+- Reuse canonical contracts and abstractions. Do not create parallel implementations, weaken security or validation, or change public behavior without explicit scope.
+- Keep code, identifiers, branch names, commit messages, prompts, UI text, and technical documentation in English unless project requirements specify otherwise.
 
-## General rules
+## Implementation and validation
 
-- Production-quality code only.
-- TypeScript without `any`.
-- Keep components reusable and isolated.
-- Use CSS Modules for component styles.
-- Preserve existing architecture and naming conventions.
-- Do not introduce new dependencies unless explicitly requested.
-- Prefer small, focused changes.
-- Do not rewrite unrelated files.
-- Do not change backend code unless the task explicitly requires it.
-- Do not change public APIs of existing components unless explicitly requested.
-- Keep accessibility in mind for every UI component.
+- Add a regression test for every bug fix and relevant success, failure, boundary, and compatibility tests for new behavior.
+- Validate in increasing scope: focused tests, all applicable backend and/or frontend tests, then configured compile, typecheck, lint, and build checks relevant to the change.
+- Use repository configuration and documented scripts as the canonical commands; do not claim a check passed unless it was executed and its result observed.
+- Before handoff, inspect the complete diff for correctness, security, data safety, stale contracts, missing callers, weak tests, and unrelated changes.
+- Run `git diff --check` and inspect the final `git status`.
+- Update authoritative documentation and roadmap entries only when the task changes behavior, architecture, contracts, setup, migrations, or completion status.
 
-## Shared UI component rules
+## Git safety
 
-Every shared UI component must:
+- Preserve all existing tracked and untracked user work.
+- Do not commit, push, merge, rebase, delete branches, open pull requests, or create releases unless the user explicitly requests that action.
+- Do not stage files, amend history, force-push, reset, or delete data unless explicitly authorized for an exact verified scope.
 
-- Live in its own folder inside `frontend/src/shared/ui`.
-- Have this structure:
+## Completion and handoff
 
-```txt
-ComponentName/
-  ComponentName.tsx
-  ComponentName.module.css
-  index.ts
+- A task is complete only when its acceptance criteria are met, architecture and contracts are preserved, relevant tests and checks pass, the diff contains no unrelated changes, and required documentation is synchronized.
+- Report what changed, the files or components affected, executed validations and results, remaining limitations or risks, and any action required from the user.
