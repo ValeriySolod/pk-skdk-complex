@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { getDemoRoleAssignments, getRealRoleAssignments, getRoleAssignments } from './roleAssignmentsApi.ts';
+
+const assignments = [{ id: 1, user_id: 2, role_code: 'audit.reader', scope_type: null, scope_id: null, is_active: true, assigned_by_user_id: null, assigned_at: '2026-01-01T00:00:00Z', revoked_at: null }];
+test('real role assignments path uses the canonical relative endpoint and validates its response', async () => { let path; assert.deepEqual(await getRealRoleAssignments(async (requestedPath) => { path = requestedPath; return assignments; }), assignments); assert.equal(path, '/user-management/role-assignments'); });
+test('demo role assignments path is an explicit isolated mock and returns detached values', async () => { const first = await getDemoRoleAssignments(); first[0].role_code = 'changed'; assert.notEqual((await getDemoRoleAssignments())[0].role_code, 'changed'); });
+test('role assignments dispatcher isolates demo and real request paths', async () => { let requestCount = 0; let demoCount = 0; assert.deepEqual(await getRoleAssignments({ demoMode: true, request: async () => { requestCount += 1; return []; }, readDemoRoleAssignments: async () => { demoCount += 1; return assignments; } }), assignments); assert.equal(requestCount, 0); assert.equal(demoCount, 1); let path; assert.deepEqual(await getRoleAssignments({ demoMode: false, request: async (value) => { path = value; return assignments; }, readDemoRoleAssignments: async () => [] }), assignments); assert.equal(path, '/user-management/role-assignments'); });
