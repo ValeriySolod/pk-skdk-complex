@@ -69,4 +69,12 @@ Focused Node tests cover the exact `EmployeeAssignmentRead` validator, canonical
 
 DEV-009 is intentionally limited to the organization-unit, position, and employee-assignment read paths and their deterministic UI states. Out of scope remain writes for those resources, UI redesign, API generation, global state libraries, backend behavior changes, auth bypasses, and normalization of unrelated frontend models.
 
+## User Management read-only slice (DEV-011)
+
+DEV-011 connects the registered, `SYSTEM_ADMIN`-visible `/admin` page to `GET /user-management/users` through the canonical authenticated client, producing `GET /api/v1/user-management/users`. Backend authentication and authorization remain authoritative; the frontend role gate is navigation behavior only. A successful payload must be an array whose objects contain exactly the `UserRead` fields and types: integer `id`, string `username`, nullable string `email`, and boolean `is_active`. Missing, mistyped, or additional fields are rejected before UI state is updated.
+
+Demo users are supplied only by an explicitly separate mock loader and never invoke the real request path. The page presents loading, populated, empty, and retryable error states. Active 401 responses clear `pk_skdk_token` and navigate to `/login`; stale or unmounted 401 responses cannot clear the session or navigate. A 403 and malformed-response, network, configuration, server, unexpected, stale, and unmounted outcomes preserve the token. Generation invalidation prevents superseded or unmounted requests from changing current state.
+
+Focused frontend coverage fixes exact runtime validation, canonical endpoint selection, demo isolation, state/error mapping, retry transitions, and request-generation safeguards. Backend coverage fixes the exact serialized users-list response and unauthenticated 401 boundary without changing backend behavior. DEV-011 adds no writes, page redesign, dependency, legacy-client migration, or authorization change.
+
 Operational prerequisites remain a migrated database with an active user, a valid CORS origin for the deployed frontend, secure HTTPS deployment, a supplied `VITE_API_URL`, and demo mode disabled outside intentional demos. Automated coverage does not replace a manual deployed-browser check with a real backend session.
