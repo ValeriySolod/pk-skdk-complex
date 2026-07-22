@@ -561,6 +561,59 @@ def test_audit_event_create_read_list_and_database_persistence(
     assert list_response.json() == [second_event, first_event]
 
 
+def test_audit_events_list_exposes_exact_read_contract_with_nullable_and_nested_details(
+    client: TestClient,
+) -> None:
+    created = create_audit_event(
+        client,
+        actor_user_id=None,
+        target_user_id=None,
+        summary=None,
+        details={
+            "role": "audit.reader",
+            "context": {"source": "admin", "enabled": True},
+            "changes": [1, "two", None],
+        },
+    )
+    response = client.get(f"{BASE_URL}/audit-events")
+    assert response.status_code == 200
+    assert response.json() == [created]
+    assert set(created) == {
+        "id", "actor_user_id", "target_user_id", "event_type", "summary",
+        "details", "created_at",
+    }
+    assert created["actor_user_id"] is None
+    assert created["target_user_id"] is None
+    assert created["summary"] is None
+    assert created["details"] == {
+        "role": "audit.reader",
+        "context": {"source": "admin", "enabled": True},
+        "changes": [1, "two", None],
+    }
+    datetime.fromisoformat(str(created["created_at"]).replace("Z", "+00:00"))
+
+
+def test_audit_events_list_orders_newest_first_and_serializes_datetimes(
+    client: TestClient,
+) -> None:
+    first = create_audit_event(client, event_type="first.event")
+    second = create_audit_event(client, event_type="second.event")
+    response = client.get(f"{BASE_URL}/audit-events")
+    assert response.status_code == 200
+    payload = response.json()
+    assert [event["id"] for event in payload] == [second["id"], first["id"]]
+    for event in payload:
+        assert isinstance(event["created_at"], str)
+        datetime.fromisoformat(event["created_at"].replace("Z", "+00:00"))
+
+
+def test_audit_events_list_requires_authentication() -> None:
+    with TestClient(app) as unauthenticated_client:
+        response = unauthenticated_client.get(f"{BASE_URL}/audit-events")
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Not authenticated"}
+
+
 def test_audit_event_endpoints_return_supported_validation_and_not_found_errors(
     client: TestClient,
     db_session: Session,
