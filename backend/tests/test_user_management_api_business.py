@@ -334,6 +334,68 @@ def test_profile_endpoints_return_supported_validation_and_conflict_errors(
     }
 
 
+def test_role_assignments_list_exposes_exact_read_contract_with_nullable_fields(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    user = create_user(db_session, "api-role-assignment-contract-user")
+    created = create_role_assignment(
+        client,
+        user.id,
+        scope_type=None,
+        scope_id=None,
+        is_active=False,
+        assigned_by_user_id=None,
+    )
+
+    response = client.get(f"{BASE_URL}/role-assignments")
+
+    assert response.status_code == 200
+    assert response.json() == [created]
+    assert set(created) == {
+        "id", "user_id", "role_code", "scope_type", "scope_id", "is_active",
+        "assigned_by_user_id", "assigned_at", "revoked_at",
+    }
+    for field in ("scope_type", "scope_id", "assigned_by_user_id", "revoked_at"):
+        assert created[field] is None
+    datetime.fromisoformat(str(created["assigned_at"]).replace("Z", "+00:00"))
+
+
+def test_role_assignments_list_serializes_revoked_datetime(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    user = create_user(db_session, "api-revoked-role-assignment-user")
+    created = create_role_assignment(client, user.id)
+    revoked_at = "2026-07-22T08:30:00+00:00"
+
+    update_response = client.patch(
+        f"{BASE_URL}/role-assignments/{created['id']}",
+        json={"is_active": False, "revoked_at": revoked_at},
+    )
+    response = client.get(f"{BASE_URL}/role-assignments")
+
+    assert update_response.status_code == 200
+    assert response.status_code == 200
+    serialized = response.json()[0]["revoked_at"]
+    assert isinstance(serialized, str)
+    assert datetime.fromisoformat(serialized.replace("Z", "+00:00")) == datetime(
+        2026,
+        7,
+        22,
+        8,
+        30,
+    )
+
+
+def test_role_assignments_list_requires_authentication() -> None:
+    with TestClient(app) as unauthenticated_client:
+        response = unauthenticated_client.get(f"{BASE_URL}/role-assignments")
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Not authenticated"}
+
+
 def test_role_assignment_create_update_read_list_and_database_persistence(
     client: TestClient,
     db_session: Session,
