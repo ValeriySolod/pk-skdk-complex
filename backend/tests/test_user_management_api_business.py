@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from datetime import datetime
 
 import pytest
 from fastapi.testclient import TestClient
@@ -205,6 +206,41 @@ def test_users_list_requires_authentication() -> None:
     with TestClient(app) as unauthenticated_client:
         response = unauthenticated_client.get(f"{BASE_URL}/users")
 
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Not authenticated"}
+
+
+def test_profiles_list_exposes_exact_read_contract_with_nullable_fields(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    user = create_user(db_session, "api-profile-contract-user")
+    created = create_profile(
+        client,
+        user.id,
+        display_name=None,
+        personnel_number=None,
+        job_title=None,
+        phone_number=None,
+        is_active=False,
+        notes=None,
+    )
+    response = client.get(f"{BASE_URL}/profiles")
+    assert response.status_code == 200
+    assert response.json() == [created]
+    assert set(created) == {
+        "id", "user_id", "display_name", "personnel_number", "job_title",
+        "phone_number", "is_active", "notes", "created_at", "updated_at",
+    }
+    for field in ("display_name", "personnel_number", "job_title", "phone_number", "notes"):
+        assert created[field] is None
+    datetime.fromisoformat(str(created["created_at"]).replace("Z", "+00:00"))
+    datetime.fromisoformat(str(created["updated_at"]).replace("Z", "+00:00"))
+
+
+def test_profiles_list_requires_authentication() -> None:
+    with TestClient(app) as unauthenticated_client:
+        response = unauthenticated_client.get(f"{BASE_URL}/profiles")
     assert response.status_code == 401
     assert response.json() == {"detail": "Not authenticated"}
 
