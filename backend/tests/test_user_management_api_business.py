@@ -181,6 +181,34 @@ def test_user_detail_returns_not_found_for_unknown_user(client: TestClient) -> N
     assert response.json() == {"detail": "User not found"}
 
 
+def test_users_list_exposes_exact_read_contract(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    user = create_user(db_session, "api-contract-user")
+    user.email = "contract@example.test"
+
+    response = client.get(f"{BASE_URL}/users")
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "id": user.id,
+            "username": "api-contract-user",
+            "email": "contract@example.test",
+            "is_active": True,
+        },
+    ]
+
+
+def test_users_list_requires_authentication() -> None:
+    with TestClient(app) as unauthenticated_client:
+        response = unauthenticated_client.get(f"{BASE_URL}/users")
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Not authenticated"}
+
+
 def test_profile_create_update_read_list_and_database_persistence(
     client: TestClient,
     db_session: Session,
