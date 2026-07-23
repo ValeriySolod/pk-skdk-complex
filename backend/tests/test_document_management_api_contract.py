@@ -315,6 +315,18 @@ def test_document_create_list_get_update_delete_contract(
     assert delete_response.json() == {"deleted": True}
 
 
+def test_documents_list_requires_authentication() -> None:
+    original_overrides = app.dependency_overrides.copy()
+    app.dependency_overrides.pop(get_current_user, None)
+    try:
+        response = TestClient(app).get(f"{BASE_URL}/documents")
+    finally:
+        app.dependency_overrides = original_overrides
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Not authenticated"}
+
+
 def test_document_endpoints_return_not_found_and_validation_errors(
     client: TestClient,
 ) -> None:

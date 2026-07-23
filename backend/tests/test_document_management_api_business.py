@@ -73,6 +73,44 @@ def create_document(
     return response.json()
 
 
+def test_documents_read_slice_returns_persisted_rows_and_nullable_metadata(
+    client: TestClient,
+) -> None:
+    first = create_document(
+        client,
+        title="Policy",
+        document_number=None,
+        description=None,
+        status="active",
+    )
+    second = create_document(
+        client,
+        title="Procedure",
+        document_number="DOC-READ-002",
+        description="Controlled procedure",
+    )
+
+    response = client.get(f"{BASE_URL}/documents")
+
+    assert response.status_code == 200
+    documents = response.json()
+    assert [document["id"] for document in documents] == [first["id"], second["id"]]
+    assert documents[0]["document_number"] is None
+    assert documents[0]["description"] is None
+    assert set(documents[0]) == {
+        "id",
+        "title",
+        "document_number",
+        "description",
+        "document_type",
+        "status",
+        "organization_id",
+        "owner_user_id",
+        "created_at",
+        "updated_at",
+    }
+
+
 def create_category(
     client: TestClient,
     *,
