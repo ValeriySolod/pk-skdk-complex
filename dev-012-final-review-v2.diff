@@ -1,0 +1,386 @@
+diff --git a/backend/tests/test_user_management_api_business.py b/backend/tests/test_user_management_api_business.py
+index 1c40835..5b46afa 100644
+--- a/backend/tests/test_user_management_api_business.py
++++ b/backend/tests/test_user_management_api_business.py
+@@ -1,6 +1,7 @@
+ from __future__ import annotations
+ 
+ from collections.abc import Generator
++from datetime import datetime
+ 
+ import pytest
+ from fastapi.testclient import TestClient
+@@ -209,6 +210,41 @@ def test_users_list_requires_authentication() -> None:
+     assert response.json() == {"detail": "Not authenticated"}
+ 
+ 
++def test_profiles_list_exposes_exact_read_contract_with_nullable_fields(
++    client: TestClient,
++    db_session: Session,
++) -> None:
++    user = create_user(db_session, "api-profile-contract-user")
++    created = create_profile(
++        client,
++        user.id,
++        display_name=None,
++        personnel_number=None,
++        job_title=None,
++        phone_number=None,
++        is_active=False,
++        notes=None,
++    )
++    response = client.get(f"{BASE_URL}/profiles")
++    assert response.status_code == 200
++    assert response.json() == [created]
++    assert set(created) == {
++        "id", "user_id", "display_name", "personnel_number", "job_title",
++        "phone_number", "is_active", "notes", "created_at", "updated_at",
++    }
++    for field in ("display_name", "personnel_number", "job_title", "phone_number", "notes"):
++        assert created[field] is None
++    datetime.fromisoformat(str(created["created_at"]).replace("Z", "+00:00"))
++    datetime.fromisoformat(str(created["updated_at"]).replace("Z", "+00:00"))
++
++
++def test_profiles_list_requires_authentication() -> None:
++    with TestClient(app) as unauthenticated_client:
++        response = unauthenticated_client.get(f"{BASE_URL}/profiles")
++    assert response.status_code == 401
++    assert response.json() == {"detail": "Not authenticated"}
++
++
+ def test_profile_create_update_read_list_and_database_persistence(
+     client: TestClient,
+     db_session: Session,
+diff --git a/docs/architecture/frontend-backend-integration.md b/docs/architecture/frontend-backend-integration.md
+index b6e5a28..47ff7c5 100644
+--- a/docs/architecture/frontend-backend-integration.md
++++ b/docs/architecture/frontend-backend-integration.md
+@@ -77,4 +77,12 @@ Demo users are supplied only by an explicitly separate mock loader and never inv
+ 
+ Focused frontend coverage fixes exact runtime validation, canonical endpoint selection, demo isolation, state/error mapping, retry transitions, and request-generation safeguards. Backend coverage fixes the exact serialized users-list response and unauthenticated 401 boundary without changing backend behavior. DEV-011 adds no writes, page redesign, dependency, legacy-client migration, or authorization change.
+ 
++## User Management profiles read-only slice (DEV-012)
++
++DEV-012 preserves the complete DEV-011 users slice and adds a second independent section to the registered `/admin` page. With demo mode disabled, it requests `GET /user-management/profiles` through the canonical authenticated client, producing `GET /api/v1/user-management/profiles`. Successful data must be an array whose objects contain exactly the `UserManagementProfileRead` fields: integer `id` and `user_id`; nullable strings `display_name`, `personnel_number`, `job_title`, `phone_number`, and `notes`; boolean `is_active`; and valid ISO datetime strings `created_at` and `updated_at`. Missing, mistyped, additional, or invalid datetime fields are rejected before UI state is updated.
++
++Profile demo records are supplied only through a separate mock loader and never call the backend. Profiles independently present loading, populated, empty, and retryable error states without coupling their result to the users section. Active 401 responses clear `pk_skdk_token` and navigate to `/login`; stale or unmounted 401 responses cannot clear the session or navigate. A 403 and malformed-response, network, configuration, server, unexpected, stale, and unmounted outcomes preserve the token. Generation invalidation prevents superseded or unmounted profile requests from changing current state.
++
++Focused frontend coverage fixes the exact runtime contract, canonical endpoint, demo isolation, error mapping, retry transitions, and request-generation safeguards. Backend coverage fixes the exact serialized profiles-list contract, nullable values, datetime serialization, and unauthenticated 401 boundary without changing backend business behavior or authorization. DEV-012 adds no writes, redesign, dependency, unrelated client migration, or backend behavior change.
++
+ Operational prerequisites remain a migrated database with an active user, a valid CORS origin for the deployed frontend, secure HTTPS deployment, a supplied `VITE_API_URL`, and demo mode disabled outside intentional demos. Automated coverage does not replace a manual deployed-browser check with a real backend session.
+diff --git a/docs/roadmap/modules-roadmap.md b/docs/roadmap/modules-roadmap.md
+index dcb2ef1..7d13fc6 100644
+--- a/docs/roadmap/modules-roadmap.md
++++ b/docs/roadmap/modules-roadmap.md
+@@ -34,6 +34,7 @@ Each module task has a unique identifier (`MOD-XXX`) that never changes after be
+ 
+ | ID | Task | Status | Notes |
+ |----|------|--------|-------|
++| DEV-012 | User Management profiles read-only vertical integration slice | ✅ | The registered `/admin` page preserves DEV-011 and adds an independent profiles section backed by real non-demo `GET /api/v1/user-management/profiles` data through the canonical authenticated client; it strictly validates the exact `UserManagementProfileRead` list contract including nullable fields and valid datetime strings, isolates demo data, and provides deterministic loading, populated, empty, retryable error, active/stale 401, token-preserving 403, malformed-response, network, configuration, server-error, unexpected-error, stale-request, and unmounted-request behavior; focused frontend and backend contract coverage, complete frontend and backend suites, frontend build, and backend compilation passed |
+ | DEV-011 | User Management read-only vertical integration slice | ✅ | The registered `/admin` page reads real non-demo `GET /api/v1/user-management/users` data through the canonical authenticated client, strictly validates the exact `UserRead` list contract, isolates demo data, and provides deterministic loading, populated, empty, retryable error, active/stale 401, token-preserving 403, malformed-response, network, configuration, server-error, unexpected-error, stale-request, and unmounted-request behavior; 11 focused frontend tests, 10 focused backend tests, the complete 70-test frontend suite, the complete 415-test backend suite, frontend production build, and backend compilation passed |
+ | DEV-001 | Git Bash Workflow Scripts | ✅ | Git Bash helper scripts and documentation created |
+ | DEV-002 | Project-wide backend integration and release-readiness sweep | ✅ | Verified application/module registration, unique route methods, authentication boundaries, request-session rollback/closure, canonical 42-table metadata, mapper relationships, the continuous 13-revision Alembic chain, and a clean SQLite upgrade to the single head; removed unversioned schema creation from application startup and documented the Alembic-first release procedure; PostgreSQL execution remains an environment-dependent release check |
+diff --git a/frontend/package.json b/frontend/package.json
+index b0cf277..7d6020f 100644
+--- a/frontend/package.json
++++ b/frontend/package.json
+@@ -8,8 +8,9 @@
+   },
+   "scripts": {
+     "dev": "vite",
+-    "test": "node --experimental-strip-types --test src/api/client.test.mjs src/api/userContract.test.mjs src/app/auth/currentUserSession.test.mjs src/pages/LoginPage/loginError.test.mjs src/modules/organizations/organizationUnitContract.test.mjs src/modules/organizations/organizationUnitsApi.test.mjs src/modules/organizations/organizationUnitsState.test.mjs src/modules/organizations/organizationUnitsPageCoordinator.test.mjs src/modules/organizations/positionContract.test.mjs src/modules/organizations/positionsApi.test.mjs src/modules/organizations/positionsState.test.mjs src/modules/organizations/positionsPageCoordinator.test.mjs src/modules/organizations/employeeAssignmentContract.test.mjs src/modules/organizations/employeeAssignmentsApi.test.mjs src/modules/organizations/employeeAssignmentsState.test.mjs src/modules/organizations/employeeAssignmentsPageCoordinator.test.mjs src/modules/admin/userContract.test.mjs src/modules/admin/usersApi.test.mjs src/modules/admin/usersState.test.mjs src/modules/admin/usersPageCoordinator.test.mjs",
++    "test": "node --experimental-strip-types --test src/api/client.test.mjs src/api/userContract.test.mjs src/app/auth/currentUserSession.test.mjs src/pages/LoginPage/loginError.test.mjs src/modules/organizations/organizationUnitContract.test.mjs src/modules/organizations/organizationUnitsApi.test.mjs src/modules/organizations/organizationUnitsState.test.mjs src/modules/organizations/organizationUnitsPageCoordinator.test.mjs src/modules/organizations/positionContract.test.mjs src/modules/organizations/positionsApi.test.mjs src/modules/organizations/positionsState.test.mjs src/modules/organizations/positionsPageCoordinator.test.mjs src/modules/organizations/employeeAssignmentContract.test.mjs src/modules/organizations/employeeAssignmentsApi.test.mjs src/modules/organizations/employeeAssignmentsState.test.mjs src/modules/organizations/employeeAssignmentsPageCoordinator.test.mjs src/modules/admin/userContract.test.mjs src/modules/admin/usersApi.test.mjs src/modules/admin/usersState.test.mjs src/modules/admin/usersPageCoordinator.test.mjs src/modules/admin/profileContract.test.mjs src/modules/admin/profilesApi.test.mjs src/modules/admin/profilesState.test.mjs src/modules/admin/profilesPageCoordinator.test.mjs",
+     "test:dev011": "node --experimental-strip-types --test src/modules/admin/userContract.test.mjs src/modules/admin/usersApi.test.mjs src/modules/admin/usersState.test.mjs src/modules/admin/usersPageCoordinator.test.mjs",
++    "test:dev012": "node --experimental-strip-types --test src/modules/admin/profileContract.test.mjs src/modules/admin/profilesApi.test.mjs src/modules/admin/profilesState.test.mjs src/modules/admin/profilesPageCoordinator.test.mjs",
+     "build": "tsc -b && vite build",
+     "preview": "vite preview"
+   },
+diff --git a/frontend/src/modules/admin/AdminPage.module.css b/frontend/src/modules/admin/AdminPage.module.css
+index 3ec7b66..d8bc9f8 100644
+--- a/frontend/src/modules/admin/AdminPage.module.css
++++ b/frontend/src/modules/admin/AdminPage.module.css
+@@ -1,4 +1,6 @@
+ .page { display: grid; gap: 1.5rem; }
++.section { display: grid; gap: 1rem; }
++.section h2 { margin: 0; }
+ .status { display: flex; align-items: center; gap: 0.75rem; }
+ .errorPanel { display: grid; justify-items: start; gap: 0.75rem; padding: 1rem; border: 1px solid #d14343; border-radius: 0.5rem; }
+ .errorPanel p { margin: 0; }
+diff --git a/frontend/src/modules/admin/AdminPage.tsx b/frontend/src/modules/admin/AdminPage.tsx
+index f4f68ef..35210ca 100644
+--- a/frontend/src/modules/admin/AdminPage.tsx
++++ b/frontend/src/modules/admin/AdminPage.tsx
+@@ -2,10 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
+ import { Button, EmptyState, Loader, PageHeader } from '../../shared/ui';
+ import { createUsersPageCoordinator, type UsersPageCoordinator } from './usersPageCoordinator.ts';
+ import { usersErrorMessages, type UsersState } from './usersState.ts';
++import { createProfilesPageCoordinator, type ProfilesPageCoordinator } from './profilesPageCoordinator.ts';
++import { profilesErrorMessages, type ProfilesState } from './profilesState.ts';
+ import styles from './AdminPage.module.css';
+ 
+ export function AdminPage() {
+   const [state, setState] = useState<UsersState>({ status: 'loading' });
++  const [profilesState, setProfilesState] = useState<ProfilesState>({ status: 'loading' });
+   const coordinator = useRef<UsersPageCoordinator | null>(null);
+   if (coordinator.current === null) {
+     coordinator.current = createUsersPageCoordinator({
+@@ -13,11 +16,17 @@ export function AdminPage() {
+       navigateToLogin: () => window.location.assign('/login'),
+     });
+   }
++  const profilesCoordinator = useRef<ProfilesPageCoordinator | null>(null);
++  if (profilesCoordinator.current === null) {
++    profilesCoordinator.current = createProfilesPageCoordinator({ applyState: setProfilesState, navigateToLogin: () => window.location.assign('/login') });
++  }
+   const load = useCallback(async () => { await coordinator.current?.load(); }, []);
++  const loadProfiles = useCallback(async () => { await profilesCoordinator.current?.load(); }, []);
+   useEffect(() => {
+     void load();
+-    return () => coordinator.current?.invalidate();
+-  }, [load]);
++    void loadProfiles();
++    return () => { coordinator.current?.invalidate(); profilesCoordinator.current?.invalidate(); };
++  }, [load, loadProfiles]);
+ 
+   return (
+     <div className={styles.page}>
+@@ -33,6 +42,13 @@ export function AdminPage() {
+           </table>
+         </div>
+       )}
++      <section className={styles.section} aria-labelledby="profiles-heading">
++        <h2 id="profiles-heading">Profiles</h2>
++        {profilesState.status === 'loading' && <div className={styles.status} role="status" aria-live="polite"><Loader /><span>Loading profiles...</span></div>}
++        {profilesState.status === 'error' && <div className={styles.errorPanel} role="alert"><p>{profilesErrorMessages[profilesState.failure]}</p><Button type="button" onClick={() => void loadProfiles()}>Retry profiles</Button></div>}
++        {profilesState.status === 'success' && profilesState.profiles.length === 0 && <EmptyState title="No profiles found" />}
++        {profilesState.status === 'success' && profilesState.profiles.length > 0 && <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>ID</th><th>User ID</th><th>Display name</th><th>Personnel number</th><th>Job title</th><th>Phone</th><th>Status</th><th>Notes</th><th>Created</th><th>Updated</th></tr></thead><tbody>{profilesState.profiles.map((profile) => <tr key={profile.id}><td>{profile.id}</td><td>{profile.user_id}</td><td>{profile.display_name ?? '—'}</td><td>{profile.personnel_number ?? '—'}</td><td>{profile.job_title ?? '—'}</td><td>{profile.phone_number ?? '—'}</td><td>{profile.is_active ? 'Active' : 'Inactive'}</td><td>{profile.notes ?? '—'}</td><td>{profile.created_at}</td><td>{profile.updated_at}</td></tr>)}</tbody></table></div>}
++      </section>
+     </div>
+   );
+ }
+diff --git a/frontend/src/modules/admin/profileContract.test.mjs b/frontend/src/modules/admin/profileContract.test.mjs
+new file mode 100644
+index 0000000..33a7aa1
+--- /dev/null
++++ b/frontend/src/modules/admin/profileContract.test.mjs
+@@ -0,0 +1,15 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { InvalidProfilesResponseError, parseProfiles } from './profileContract.ts';
++
++const validProfile = { id: 7, user_id: 3, display_name: null, personnel_number: 'PN-3', job_title: null, phone_number: '+3801', is_active: true, notes: null, created_at: '2026-07-22T10:11:12.123456+03:00', updated_at: '2026-07-22T07:11:12Z' };
++
++test('UserManagementProfileRead list validation preserves the exact nullable backend contract', () => {
++  assert.deepEqual(parseProfiles([validProfile, { ...validProfile, id: 8, display_name: 'Operator', personnel_number: null, job_title: 'Clerk', phone_number: null, is_active: false, notes: 'Archived', created_at: '2026-01-01T00:00:00' }]), [validProfile, { ...validProfile, id: 8, display_name: 'Operator', personnel_number: null, job_title: 'Clerk', phone_number: null, is_active: false, notes: 'Archived', created_at: '2026-01-01T00:00:00' }]);
++  assert.deepEqual(parseProfiles([]), []);
++});
++
++test('UserManagementProfileRead validation rejects missing, mistyped, additional, and invalid datetime fields', () => {
++  const { notes: _omitted, ...missingNotes } = validProfile;
++  for (const value of [null, {}, [null], [missingNotes], [{ ...validProfile, id: 1.5 }], [{ ...validProfile, user_id: '3' }], [{ ...validProfile, display_name: 4 }], [{ ...validProfile, personnel_number: false }], [{ ...validProfile, job_title: [] }], [{ ...validProfile, phone_number: 1 }], [{ ...validProfile, is_active: 'true' }], [{ ...validProfile, notes: {} }], [{ ...validProfile, created_at: '2026-02-30T00:00:00Z' }], [{ ...validProfile, updated_at: 'not-a-datetime' }], [{ ...validProfile, role: 'admin' }]]) assert.throws(() => parseProfiles(value), InvalidProfilesResponseError);
++});
+diff --git a/frontend/src/modules/admin/profileContract.ts b/frontend/src/modules/admin/profileContract.ts
+new file mode 100644
+index 0000000..fc0537b
+--- /dev/null
++++ b/frontend/src/modules/admin/profileContract.ts
+@@ -0,0 +1,58 @@
++export interface UserManagementProfileRead {
++  id: number;
++  user_id: number;
++  display_name: string | null;
++  personnel_number: string | null;
++  job_title: string | null;
++  phone_number: string | null;
++  is_active: boolean;
++  notes: string | null;
++  created_at: string;
++  updated_at: string;
++}
++
++export class InvalidProfilesResponseError extends Error {
++  constructor() {
++    super('The profiles response does not match the UserManagementProfileRead contract.');
++    this.name = 'InvalidProfilesResponseError';
++  }
++}
++
++const contractKeys = ['created_at', 'display_name', 'id', 'is_active', 'job_title', 'notes', 'personnel_number', 'phone_number', 'updated_at', 'user_id'];
++const dateTimePattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|([+-])(\d{2}):(\d{2}))?$/;
++
++function isValidDateTime(value: unknown): value is string {
++  if (typeof value !== 'string') return false;
++  const match = dateTimePattern.exec(value);
++  if (match === null) return false;
++  const [, year, month, day, hour, minute, second, , offsetHour, offsetMinute] = match;
++  const numeric = [year, month, day, hour, minute, second].map(Number);
++  const [y, m, d, h, min, s] = numeric;
++  if (h > 23 || min > 59 || s > 59 || Number(offsetHour ?? 0) > 23 || Number(offsetMinute ?? 0) > 59) return false;
++  const date = new Date(Date.UTC(y, m - 1, d, h, min, s));
++  return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
++}
++
++function isNullableString(value: unknown): value is string | null {
++  return value === null || typeof value === 'string';
++}
++
++function parseProfile(value: unknown): UserManagementProfileRead {
++  if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new InvalidProfilesResponseError();
++  const profile = value as Record<string, unknown>;
++  const keys = Object.keys(profile).sort();
++  if (
++    keys.length !== contractKeys.length || keys.some((key, index) => key !== contractKeys[index]) ||
++    !Number.isInteger(profile.id) || !Number.isInteger(profile.user_id) ||
++    !isNullableString(profile.display_name) || !isNullableString(profile.personnel_number) ||
++    !isNullableString(profile.job_title) || !isNullableString(profile.phone_number) ||
++    typeof profile.is_active !== 'boolean' || !isNullableString(profile.notes) ||
++    !isValidDateTime(profile.created_at) || !isValidDateTime(profile.updated_at)
++  ) throw new InvalidProfilesResponseError();
++  return profile as unknown as UserManagementProfileRead;
++}
++
++export function parseProfiles(value: unknown): UserManagementProfileRead[] {
++  if (!Array.isArray(value)) throw new InvalidProfilesResponseError();
++  return value.map(parseProfile);
++}
+diff --git a/frontend/src/modules/admin/profilesApi.test.mjs b/frontend/src/modules/admin/profilesApi.test.mjs
+new file mode 100644
+index 0000000..cc839f8
+--- /dev/null
++++ b/frontend/src/modules/admin/profilesApi.test.mjs
+@@ -0,0 +1,8 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { getDemoProfiles, getProfiles, getRealProfiles } from './profilesApi.ts';
++
++const profiles = [{ id: 1, user_id: 2, display_name: null, personnel_number: null, job_title: null, phone_number: null, is_active: true, notes: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }];
++test('real profiles path uses the canonical relative endpoint and validates its response', async () => { let path; assert.deepEqual(await getRealProfiles(async (requestedPath) => { path = requestedPath; return profiles; }), profiles); assert.equal(path, '/user-management/profiles'); });
++test('demo profiles path is an explicit isolated mock and returns detached values', async () => { const first = await getDemoProfiles(); first[0].display_name = 'changed'; assert.notEqual((await getDemoProfiles())[0].display_name, 'changed'); });
++test('profiles dispatcher isolates demo and real request paths', async () => { let requestCount = 0; let demoCount = 0; assert.deepEqual(await getProfiles({ demoMode: true, request: async () => { requestCount += 1; return []; }, readDemoProfiles: async () => { demoCount += 1; return profiles; } }), profiles); assert.equal(requestCount, 0); assert.equal(demoCount, 1); let path; assert.deepEqual(await getProfiles({ demoMode: false, request: async (value) => { path = value; return profiles; }, readDemoProfiles: async () => [] }), profiles); assert.equal(path, '/user-management/profiles'); });
+diff --git a/frontend/src/modules/admin/profilesApi.ts b/frontend/src/modules/admin/profilesApi.ts
+new file mode 100644
+index 0000000..0776357
+--- /dev/null
++++ b/frontend/src/modules/admin/profilesApi.ts
+@@ -0,0 +1,22 @@
++import { apiRequest } from '../../api/client.ts';
++import { IS_DEMO_MODE } from '../../shared/config.ts';
++import { parseProfiles, type UserManagementProfileRead } from './profileContract.ts';
++
++const PROFILES_PATH = '/user-management/profiles';
++const demoProfiles: UserManagementProfileRead[] = [{
++  id: 1, user_id: 1, display_name: 'Demo Administrator', personnel_number: 'DEMO-001',
++  job_title: 'Administrator', phone_number: null, is_active: true, notes: null,
++  created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
++}];
++
++export type ProfilesRequest = (path: string) => Promise<unknown>;
++export type ProfilesApiDependencies = { demoMode: boolean; request: ProfilesRequest; readDemoProfiles: () => Promise<UserManagementProfileRead[]> };
++
++export async function getRealProfiles(request: ProfilesRequest = apiRequest): Promise<UserManagementProfileRead[]> {
++  return parseProfiles(await request(PROFILES_PATH));
++}
++export async function getDemoProfiles(): Promise<UserManagementProfileRead[]> { return demoProfiles.map((profile) => ({ ...profile })); }
++const defaultDependencies: ProfilesApiDependencies = { demoMode: IS_DEMO_MODE, request: apiRequest, readDemoProfiles: getDemoProfiles };
++export function getProfiles(dependencies: ProfilesApiDependencies = defaultDependencies): Promise<UserManagementProfileRead[]> {
++  return dependencies.demoMode ? dependencies.readDemoProfiles() : getRealProfiles(dependencies.request);
++}
+diff --git a/frontend/src/modules/admin/profilesPageCoordinator.test.mjs b/frontend/src/modules/admin/profilesPageCoordinator.test.mjs
+new file mode 100644
+index 0000000..a4f3627
+--- /dev/null
++++ b/frontend/src/modules/admin/profilesPageCoordinator.test.mjs
+@@ -0,0 +1,12 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { ApiError } from '../../api/client.ts';
++import { createProfilesPageCoordinator } from './profilesPageCoordinator.ts';
++import { loadProfiles } from './profilesState.ts';
++
++const profiles = [{ id: 1 }];
++function deferred() { let resolve; let reject; const promise = new Promise((res, rej) => { resolve = res; reject = rej; }); return { promise, resolve, reject }; }
++function harness(loadState) { const states = []; let navigationCount = 0; const coordinator = createProfilesPageCoordinator({ applyState: (state) => states.push(state), navigateToLogin: () => { navigationCount += 1; }, loadState }); return { coordinator, states, navigationCount: () => navigationCount }; }
++test('profiles coordinator applies loading then success and retry transitions', async () => { let count = 0; const setup = harness(async () => (++count === 1 ? { status: 'error', failure: 'network' } : { status: 'success', profiles })); await setup.coordinator.load(); await setup.coordinator.load(); assert.deepEqual(setup.states, [{ status: 'loading' }, { status: 'error', failure: 'network' }, { status: 'loading' }, { status: 'success', profiles }]); });
++test('new profile generations and unmount invalidation suppress stale results and navigation', async () => { const stale = deferred(); const current = deferred(); const requests = [stale, current]; const setup = harness(async () => requests.shift().promise); const staleLoad = setup.coordinator.load(); const currentLoad = setup.coordinator.load(); stale.resolve({ status: 'error', failure: 'server' }); await staleLoad; current.resolve({ status: 'success', profiles: [] }); await currentLoad; assert.deepEqual(setup.states, [{ status: 'loading' }, { status: 'loading' }, { status: 'success', profiles: [] }]); const pending = deferred(); const unmounted = harness(async () => pending.promise); const load = unmounted.coordinator.load(); unmounted.coordinator.invalidate(); pending.resolve({ status: 'expired-session' }); await load; assert.deepEqual(unmounted.states, [{ status: 'loading' }]); assert.equal(unmounted.navigationCount(), 0); });
++test('only an active profiles 401 clears the token and navigates', async () => { let clearCount = 0; const active = harness((isActive) => loadProfiles({ readProfiles: async () => { throw new ApiError('Unauthorized', 'http', 401); }, clearSession: () => { clearCount += 1; } }, isActive)); await active.coordinator.load(); assert.equal(clearCount, 1); assert.equal(active.navigationCount(), 1); const stale = deferred(); const current = deferred(); const requests = [stale, current]; clearCount = 0; const setup = harness((isActive) => loadProfiles({ readProfiles: () => requests.shift().promise, clearSession: () => { clearCount += 1; } }, isActive)); const staleLoad = setup.coordinator.load(); const currentLoad = setup.coordinator.load(); stale.reject(new ApiError('Unauthorized', 'http', 401)); await staleLoad; current.resolve([]); await currentLoad; assert.equal(clearCount, 0); assert.equal(setup.navigationCount(), 0); assert.deepEqual(setup.states.at(-1), { status: 'success', profiles: [] }); });
+diff --git a/frontend/src/modules/admin/profilesPageCoordinator.ts b/frontend/src/modules/admin/profilesPageCoordinator.ts
+new file mode 100644
+index 0000000..717dde3
+--- /dev/null
++++ b/frontend/src/modules/admin/profilesPageCoordinator.ts
+@@ -0,0 +1,21 @@
++import { loadProfiles, type ProfilesState } from './profilesState.ts';
++
++export type ProfilesPageLoad = (isRequestActive: () => boolean) => Promise<ProfilesState>;
++export type ProfilesPageCoordinator = { load: () => Promise<void>; invalidate: () => void };
++export function createProfilesPageCoordinator({ applyState, navigateToLogin, loadState = (isRequestActive) => loadProfiles(undefined, isRequestActive) }: {
++  applyState: (state: ProfilesState) => void; navigateToLogin: () => void; loadState?: ProfilesPageLoad;
++}): ProfilesPageCoordinator {
++  let activeGeneration = 0;
++  return {
++    load: async () => {
++      const generation = ++activeGeneration;
++      const isRequestActive = () => generation === activeGeneration;
++      applyState({ status: 'loading' });
++      const state = await loadState(isRequestActive);
++      if (!isRequestActive()) return;
++      if (state.status === 'expired-session') { navigateToLogin(); return; }
++      applyState(state);
++    },
++    invalidate: () => { activeGeneration += 1; },
++  };
++}
+diff --git a/frontend/src/modules/admin/profilesState.test.mjs b/frontend/src/modules/admin/profilesState.test.mjs
+new file mode 100644
+index 0000000..4a68516
+--- /dev/null
++++ b/frontend/src/modules/admin/profilesState.test.mjs
+@@ -0,0 +1,11 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { ApiConfigurationError, ApiError } from '../../api/client.ts';
++import { InvalidProfilesResponseError } from './profileContract.ts';
++import { loadProfiles, profilesErrorMessages } from './profilesState.ts';
++
++const profiles = [{ id: 1 }];
++function dependencies(result) { let clearCount = 0; return { value: { readProfiles: async () => { if (result instanceof Error) throw result; return result; }, clearSession: () => { clearCount += 1; } }, clearCount: () => clearCount }; }
++test('profiles orchestration represents populated and empty success deterministically', async () => { assert.deepEqual(await loadProfiles(dependencies(profiles).value), { status: 'success', profiles }); assert.deepEqual(await loadProfiles(dependencies([]).value), { status: 'success', profiles: [] }); });
++test('active 401 expires the session while stale 401 has no token side effect', async () => { const active = dependencies(new ApiError('Unauthorized', 'http', 401)); assert.deepEqual(await loadProfiles(active.value), { status: 'expired-session' }); assert.equal(active.clearCount(), 1); const stale = dependencies(new ApiError('Unauthorized', 'http', 401)); assert.deepEqual(await loadProfiles(stale.value, () => false), { status: 'expired-session' }); assert.equal(stale.clearCount(), 0); });
++test('403 and all other profile failures remain distinct and preserve the token', async () => { const cases = [[new ApiError('Forbidden', 'http', 403), 'forbidden'], [new InvalidProfilesResponseError(), 'malformed-response'], [new ApiError('Network', 'network'), 'network'], [new ApiConfigurationError(), 'configuration'], [new ApiError('Server', 'http', 503), 'server'], [new ApiError('Conflict', 'http', 409), 'unexpected'], [new Error('Unknown'), 'unexpected']]; for (const [error, failure] of cases) { const setup = dependencies(error); assert.deepEqual(await loadProfiles(setup.value), { status: 'error', failure }); assert.equal(setup.clearCount(), 0); assert.notEqual(profilesErrorMessages[failure], ''); } });
+diff --git a/frontend/src/modules/admin/profilesState.ts b/frontend/src/modules/admin/profilesState.ts
+new file mode 100644
+index 0000000..14f0df0
+--- /dev/null
++++ b/frontend/src/modules/admin/profilesState.ts
+@@ -0,0 +1,30 @@
++import { ApiConfigurationError, ApiError, removeToken } from '../../api/client.ts';
++import { InvalidProfilesResponseError, type UserManagementProfileRead } from './profileContract.ts';
++import { getProfiles } from './profilesApi.ts';
++
++export type ProfilesFailure = 'forbidden' | 'malformed-response' | 'network' | 'configuration' | 'server' | 'unexpected';
++export type ProfilesState = { status: 'loading' } | { status: 'success'; profiles: UserManagementProfileRead[] } | { status: 'expired-session' } | { status: 'error'; failure: ProfilesFailure };
++export type ProfilesDependencies = { readProfiles: () => Promise<UserManagementProfileRead[]>; clearSession: () => void };
++const defaultDependencies: ProfilesDependencies = { readProfiles: getProfiles, clearSession: removeToken };
++
++export async function loadProfiles(dependencies: ProfilesDependencies = defaultDependencies, isRequestActive: () => boolean = () => true): Promise<ProfilesState> {
++  try { return { status: 'success', profiles: await dependencies.readProfiles() }; }
++  catch (error: unknown) {
++    if (error instanceof ApiError && error.kind === 'http' && error.status === 401) { if (isRequestActive()) dependencies.clearSession(); return { status: 'expired-session' }; }
++    if (error instanceof ApiError && error.kind === 'http' && error.status === 403) return { status: 'error', failure: 'forbidden' };
++    if (error instanceof InvalidProfilesResponseError) return { status: 'error', failure: 'malformed-response' };
++    if (error instanceof ApiConfigurationError) return { status: 'error', failure: 'configuration' };
++    if (error instanceof ApiError && error.kind === 'network') return { status: 'error', failure: 'network' };
++    if (error instanceof ApiError && error.kind === 'http' && (error.status ?? 0) >= 500) return { status: 'error', failure: 'server' };
++    return { status: 'error', failure: 'unexpected' };
++  }
++}
++
++export const profilesErrorMessages: Record<ProfilesFailure, string> = {
++  forbidden: 'You do not have permission to view profiles.',
++  'malformed-response': 'The server returned an invalid profiles response.',
++  network: 'The server could not be reached. Check the network connection and retry.',
++  configuration: 'The backend API address is not configured correctly.',
++  server: 'The server could not load profiles. Retry later.',
++  unexpected: 'Profiles could not be loaded. Retry the request.',
++};

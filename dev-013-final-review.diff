@@ -1,0 +1,220 @@
+diff --git a/backend/.env b/backend/.env
+index 33cdddf..136e6f1 100644
+--- a/backend/.env
++++ b/backend/.env
+@@ -1,6 +1,6 @@
+ APP_NAME=PK SKDK
+ ENV=local
+-DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/pk_skdk
++DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/pk_skdk_dev010_validation
+ JWT_SECRET=change-me-in-production
+ JWT_ALGORITHM=HS256
+-ACCESS_TOKEN_EXPIRE_MINUTES=60
++ACCESS_TOKEN_EXPIRE_MINUTES=60
+\ No newline at end of file
+diff --git a/backend/tests/test_user_management_api_business.py b/backend/tests/test_user_management_api_business.py
+index 5b46afa..159b504 100644
+--- a/backend/tests/test_user_management_api_business.py
++++ b/backend/tests/test_user_management_api_business.py
+@@ -334,6 +334,68 @@ def test_profile_endpoints_return_supported_validation_and_conflict_errors(
+     }
+ 
+ 
++def test_role_assignments_list_exposes_exact_read_contract_with_nullable_fields(
++    client: TestClient,
++    db_session: Session,
++) -> None:
++    user = create_user(db_session, "api-role-assignment-contract-user")
++    created = create_role_assignment(
++        client,
++        user.id,
++        scope_type=None,
++        scope_id=None,
++        is_active=False,
++        assigned_by_user_id=None,
++    )
++
++    response = client.get(f"{BASE_URL}/role-assignments")
++
++    assert response.status_code == 200
++    assert response.json() == [created]
++    assert set(created) == {
++        "id", "user_id", "role_code", "scope_type", "scope_id", "is_active",
++        "assigned_by_user_id", "assigned_at", "revoked_at",
++    }
++    for field in ("scope_type", "scope_id", "assigned_by_user_id", "revoked_at"):
++        assert created[field] is None
++    datetime.fromisoformat(str(created["assigned_at"]).replace("Z", "+00:00"))
++
++
++def test_role_assignments_list_serializes_revoked_datetime(
++    client: TestClient,
++    db_session: Session,
++) -> None:
++    user = create_user(db_session, "api-revoked-role-assignment-user")
++    created = create_role_assignment(client, user.id)
++    revoked_at = "2026-07-22T08:30:00+00:00"
++
++    update_response = client.patch(
++        f"{BASE_URL}/role-assignments/{created['id']}",
++        json={"is_active": False, "revoked_at": revoked_at},
++    )
++    response = client.get(f"{BASE_URL}/role-assignments")
++
++    assert update_response.status_code == 200
++    assert response.status_code == 200
++    serialized = response.json()[0]["revoked_at"]
++    assert isinstance(serialized, str)
++    assert datetime.fromisoformat(serialized.replace("Z", "+00:00")) == datetime(
++        2026,
++        7,
++        22,
++        8,
++        30,
++    )
++
++
++def test_role_assignments_list_requires_authentication() -> None:
++    with TestClient(app) as unauthenticated_client:
++        response = unauthenticated_client.get(f"{BASE_URL}/role-assignments")
++
++    assert response.status_code == 401
++    assert response.json() == {"detail": "Not authenticated"}
++
++
+ def test_role_assignment_create_update_read_list_and_database_persistence(
+     client: TestClient,
+     db_session: Session,
+diff --git a/docs/architecture/frontend-backend-integration.md b/docs/architecture/frontend-backend-integration.md
+index 47ff7c5..419d3e3 100644
+--- a/docs/architecture/frontend-backend-integration.md
++++ b/docs/architecture/frontend-backend-integration.md
+@@ -85,4 +85,12 @@ Profile demo records are supplied only through a separate mock loader and never
+ 
+ Focused frontend coverage fixes the exact runtime contract, canonical endpoint, demo isolation, error mapping, retry transitions, and request-generation safeguards. Backend coverage fixes the exact serialized profiles-list contract, nullable values, datetime serialization, and unauthenticated 401 boundary without changing backend business behavior or authorization. DEV-012 adds no writes, redesign, dependency, unrelated client migration, or backend behavior change.
+ 
++## User Management role assignments read-only slice (DEV-013)
++
++DEV-013 preserves the independent DEV-011 users and DEV-012 profiles sections and adds a third independent section to the registered `/admin` page. With demo mode disabled, it requests `GET /user-management/role-assignments` through the canonical authenticated client, producing `GET /api/v1/user-management/role-assignments`. Successful data must be an array whose objects contain exactly the `UserManagementRoleAssignmentRead` fields: integer `id` and `user_id`; string `role_code`; nullable string `scope_type`; nullable integers `scope_id` and `assigned_by_user_id`; boolean `is_active`; valid ISO datetime string `assigned_at`; and nullable valid ISO datetime string `revoked_at`. Missing, mistyped, additional, or invalid datetime fields are rejected before UI state is updated.
++
++Role-assignment demo records are supplied only through a separate mock loader and never call the backend. Role assignments independently present loading, populated, empty, and retryable error states without coupling their result to users or profiles. Only an active role-assignment request receiving HTTP 401 clears `pk_skdk_token` and navigates to `/login`; stale or unmounted 401 responses cannot clear the session or navigate. A 403 and malformed-response, network, configuration, server, unexpected, stale, and unmounted outcomes preserve the token. Generation invalidation prevents superseded or unmounted role-assignment requests from changing current state or causing side effects.
++
++Focused frontend coverage fixes the exact runtime contract, canonical endpoint, demo isolation, error mapping, retry transitions, active and stale 401 handling, token preservation, and stale/unmounted suppression. Backend coverage fixes the exact serialized role-assignment list contract, nullable values, datetime serialization, and unauthenticated 401 boundary without changing backend business behavior or authorization. DEV-013 adds no writes, redesign, dependency, unrelated client migration, authorization change, or backend behavior change.
++
+ Operational prerequisites remain a migrated database with an active user, a valid CORS origin for the deployed frontend, secure HTTPS deployment, a supplied `VITE_API_URL`, and demo mode disabled outside intentional demos. Automated coverage does not replace a manual deployed-browser check with a real backend session.
+diff --git a/docs/roadmap/modules-roadmap.md b/docs/roadmap/modules-roadmap.md
+index 7d13fc6..c96cdd4 100644
+--- a/docs/roadmap/modules-roadmap.md
++++ b/docs/roadmap/modules-roadmap.md
+@@ -34,6 +34,7 @@ Each module task has a unique identifier (`MOD-XXX`) that never changes after be
+ 
+ | ID | Task | Status | Notes |
+ |----|------|--------|-------|
++| DEV-013 | User Management role assignments read-only vertical integration slice | ✅ | The registered `/admin` page preserves the independent DEV-011 users and DEV-012 profiles sections and adds an independent role-assignments section backed by real non-demo `GET /api/v1/user-management/role-assignments` data through the canonical authenticated client; it strictly validates the exact `UserManagementRoleAssignmentRead` list contract including nullable fields and valid datetime strings, isolates demo data, and provides deterministic loading, populated, empty, retryable error, active/stale 401, token-preserving 403, malformed-response, network, configuration, server-error, unexpected-error, stale-request, and unmounted-request behavior; focused frontend and backend contract coverage, complete frontend and backend suites, frontend build, and backend compilation passed |
+ | DEV-012 | User Management profiles read-only vertical integration slice | ✅ | The registered `/admin` page preserves DEV-011 and adds an independent profiles section backed by real non-demo `GET /api/v1/user-management/profiles` data through the canonical authenticated client; it strictly validates the exact `UserManagementProfileRead` list contract including nullable fields and valid datetime strings, isolates demo data, and provides deterministic loading, populated, empty, retryable error, active/stale 401, token-preserving 403, malformed-response, network, configuration, server-error, unexpected-error, stale-request, and unmounted-request behavior; focused frontend and backend contract coverage, complete frontend and backend suites, frontend build, and backend compilation passed |
+ | DEV-011 | User Management read-only vertical integration slice | ✅ | The registered `/admin` page reads real non-demo `GET /api/v1/user-management/users` data through the canonical authenticated client, strictly validates the exact `UserRead` list contract, isolates demo data, and provides deterministic loading, populated, empty, retryable error, active/stale 401, token-preserving 403, malformed-response, network, configuration, server-error, unexpected-error, stale-request, and unmounted-request behavior; 11 focused frontend tests, 10 focused backend tests, the complete 70-test frontend suite, the complete 415-test backend suite, frontend production build, and backend compilation passed |
+ | DEV-001 | Git Bash Workflow Scripts | ✅ | Git Bash helper scripts and documentation created |
+diff --git a/frontend/.env b/frontend/.env
+index 9eeb008..f15825c 100644
+--- a/frontend/.env
++++ b/frontend/.env
+@@ -1 +1,2 @@
+-VITE_API_URL=http://127.0.0.1:8000
+\ No newline at end of file
++# Absolute API root; never include credentials.
++VITE_API_URL=http://localhost:8000/api/v1
+diff --git a/frontend/package-lock.json b/frontend/package-lock.json
+index 334776b..79ba683 100644
+--- a/frontend/package-lock.json
++++ b/frontend/package-lock.json
+@@ -7,9 +7,6 @@
+     "": {
+       "name": "pk-skdk-frontend",
+       "version": "0.1.0",
+-      "engines": {
+-        "node": ">=22.6.0"
+-      },
+       "dependencies": {
+         "@vitejs/plugin-react": "latest",
+         "axios": "latest",
+@@ -23,6 +20,9 @@
+       "devDependencies": {
+         "@types/react": "^19.2.17",
+         "@types/react-dom": "^19.2.3"
++      },
++      "engines": {
++        "node": ">=22.6.0"
+       }
+     },
+     "node_modules/@emnapi/core": {
+diff --git a/frontend/package.json b/frontend/package.json
+index 7d6020f..f14b9e4 100644
+--- a/frontend/package.json
++++ b/frontend/package.json
+@@ -8,9 +8,10 @@
+   },
+   "scripts": {
+     "dev": "vite",
+-    "test": "node --experimental-strip-types --test src/api/client.test.mjs src/api/userContract.test.mjs src/app/auth/currentUserSession.test.mjs src/pages/LoginPage/loginError.test.mjs src/modules/organizations/organizationUnitContract.test.mjs src/modules/organizations/organizationUnitsApi.test.mjs src/modules/organizations/organizationUnitsState.test.mjs src/modules/organizations/organizationUnitsPageCoordinator.test.mjs src/modules/organizations/positionContract.test.mjs src/modules/organizations/positionsApi.test.mjs src/modules/organizations/positionsState.test.mjs src/modules/organizations/positionsPageCoordinator.test.mjs src/modules/organizations/employeeAssignmentContract.test.mjs src/modules/organizations/employeeAssignmentsApi.test.mjs src/modules/organizations/employeeAssignmentsState.test.mjs src/modules/organizations/employeeAssignmentsPageCoordinator.test.mjs src/modules/admin/userContract.test.mjs src/modules/admin/usersApi.test.mjs src/modules/admin/usersState.test.mjs src/modules/admin/usersPageCoordinator.test.mjs src/modules/admin/profileContract.test.mjs src/modules/admin/profilesApi.test.mjs src/modules/admin/profilesState.test.mjs src/modules/admin/profilesPageCoordinator.test.mjs",
++    "test": "node --experimental-strip-types --test src/api/client.test.mjs src/api/userContract.test.mjs src/app/auth/currentUserSession.test.mjs src/pages/LoginPage/loginError.test.mjs src/modules/organizations/organizationUnitContract.test.mjs src/modules/organizations/organizationUnitsApi.test.mjs src/modules/organizations/organizationUnitsState.test.mjs src/modules/organizations/organizationUnitsPageCoordinator.test.mjs src/modules/organizations/positionContract.test.mjs src/modules/organizations/positionsApi.test.mjs src/modules/organizations/positionsState.test.mjs src/modules/organizations/positionsPageCoordinator.test.mjs src/modules/organizations/employeeAssignmentContract.test.mjs src/modules/organizations/employeeAssignmentsApi.test.mjs src/modules/organizations/employeeAssignmentsState.test.mjs src/modules/organizations/employeeAssignmentsPageCoordinator.test.mjs src/modules/admin/userContract.test.mjs src/modules/admin/usersApi.test.mjs src/modules/admin/usersState.test.mjs src/modules/admin/usersPageCoordinator.test.mjs src/modules/admin/profileContract.test.mjs src/modules/admin/profilesApi.test.mjs src/modules/admin/profilesState.test.mjs src/modules/admin/profilesPageCoordinator.test.mjs src/modules/admin/roleAssignmentContract.test.mjs src/modules/admin/roleAssignmentsApi.test.mjs src/modules/admin/roleAssignmentsState.test.mjs src/modules/admin/roleAssignmentsPageCoordinator.test.mjs",
+     "test:dev011": "node --experimental-strip-types --test src/modules/admin/userContract.test.mjs src/modules/admin/usersApi.test.mjs src/modules/admin/usersState.test.mjs src/modules/admin/usersPageCoordinator.test.mjs",
+     "test:dev012": "node --experimental-strip-types --test src/modules/admin/profileContract.test.mjs src/modules/admin/profilesApi.test.mjs src/modules/admin/profilesState.test.mjs src/modules/admin/profilesPageCoordinator.test.mjs",
++    "test:dev013": "node --experimental-strip-types --test src/modules/admin/roleAssignmentContract.test.mjs src/modules/admin/roleAssignmentsApi.test.mjs src/modules/admin/roleAssignmentsState.test.mjs src/modules/admin/roleAssignmentsPageCoordinator.test.mjs",
+     "build": "tsc -b && vite build",
+     "preview": "vite preview"
+   },
+diff --git a/frontend/src/modules/admin/AdminPage.tsx b/frontend/src/modules/admin/AdminPage.tsx
+index 35210ca..72d0521 100644
+--- a/frontend/src/modules/admin/AdminPage.tsx
++++ b/frontend/src/modules/admin/AdminPage.tsx
+@@ -4,11 +4,14 @@ import { createUsersPageCoordinator, type UsersPageCoordinator } from './usersPa
+ import { usersErrorMessages, type UsersState } from './usersState.ts';
+ import { createProfilesPageCoordinator, type ProfilesPageCoordinator } from './profilesPageCoordinator.ts';
+ import { profilesErrorMessages, type ProfilesState } from './profilesState.ts';
++import { createRoleAssignmentsPageCoordinator, type RoleAssignmentsPageCoordinator } from './roleAssignmentsPageCoordinator.ts';
++import { roleAssignmentsErrorMessages, type RoleAssignmentsState } from './roleAssignmentsState.ts';
+ import styles from './AdminPage.module.css';
+ 
+ export function AdminPage() {
+   const [state, setState] = useState<UsersState>({ status: 'loading' });
+   const [profilesState, setProfilesState] = useState<ProfilesState>({ status: 'loading' });
++  const [roleAssignmentsState, setRoleAssignmentsState] = useState<RoleAssignmentsState>({ status: 'loading' });
+   const coordinator = useRef<UsersPageCoordinator | null>(null);
+   if (coordinator.current === null) {
+     coordinator.current = createUsersPageCoordinator({
+@@ -20,13 +23,19 @@ export function AdminPage() {
+   if (profilesCoordinator.current === null) {
+     profilesCoordinator.current = createProfilesPageCoordinator({ applyState: setProfilesState, navigateToLogin: () => window.location.assign('/login') });
+   }
++  const roleAssignmentsCoordinator = useRef<RoleAssignmentsPageCoordinator | null>(null);
++  if (roleAssignmentsCoordinator.current === null) {
++    roleAssignmentsCoordinator.current = createRoleAssignmentsPageCoordinator({ applyState: setRoleAssignmentsState, navigateToLogin: () => window.location.assign('/login') });
++  }
+   const load = useCallback(async () => { await coordinator.current?.load(); }, []);
+   const loadProfiles = useCallback(async () => { await profilesCoordinator.current?.load(); }, []);
++  const loadRoleAssignments = useCallback(async () => { await roleAssignmentsCoordinator.current?.load(); }, []);
+   useEffect(() => {
+     void load();
+     void loadProfiles();
+-    return () => { coordinator.current?.invalidate(); profilesCoordinator.current?.invalidate(); };
+-  }, [load, loadProfiles]);
++    void loadRoleAssignments();
++    return () => { coordinator.current?.invalidate(); profilesCoordinator.current?.invalidate(); roleAssignmentsCoordinator.current?.invalidate(); };
++  }, [load, loadProfiles, loadRoleAssignments]);
+ 
+   return (
+     <div className={styles.page}>
+@@ -49,6 +58,13 @@ export function AdminPage() {
+         {profilesState.status === 'success' && profilesState.profiles.length === 0 && <EmptyState title="No profiles found" />}
+         {profilesState.status === 'success' && profilesState.profiles.length > 0 && <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>ID</th><th>User ID</th><th>Display name</th><th>Personnel number</th><th>Job title</th><th>Phone</th><th>Status</th><th>Notes</th><th>Created</th><th>Updated</th></tr></thead><tbody>{profilesState.profiles.map((profile) => <tr key={profile.id}><td>{profile.id}</td><td>{profile.user_id}</td><td>{profile.display_name ?? '—'}</td><td>{profile.personnel_number ?? '—'}</td><td>{profile.job_title ?? '—'}</td><td>{profile.phone_number ?? '—'}</td><td>{profile.is_active ? 'Active' : 'Inactive'}</td><td>{profile.notes ?? '—'}</td><td>{profile.created_at}</td><td>{profile.updated_at}</td></tr>)}</tbody></table></div>}
+       </section>
++      <section className={styles.section} aria-labelledby="role-assignments-heading">
++        <h2 id="role-assignments-heading">Role assignments</h2>
++        {roleAssignmentsState.status === 'loading' && <div className={styles.status} role="status" aria-live="polite"><Loader /><span>Loading role assignments...</span></div>}
++        {roleAssignmentsState.status === 'error' && <div className={styles.errorPanel} role="alert"><p>{roleAssignmentsErrorMessages[roleAssignmentsState.failure]}</p><Button type="button" onClick={() => void loadRoleAssignments()}>Retry role assignments</Button></div>}
++        {roleAssignmentsState.status === 'success' && roleAssignmentsState.roleAssignments.length === 0 && <EmptyState title="No role assignments found" />}
++        {roleAssignmentsState.status === 'success' && roleAssignmentsState.roleAssignments.length > 0 && <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>ID</th><th>User ID</th><th>Role</th><th>Scope type</th><th>Scope ID</th><th>Status</th><th>Assigned by</th><th>Assigned</th><th>Revoked</th></tr></thead><tbody>{roleAssignmentsState.roleAssignments.map((assignment) => <tr key={assignment.id}><td>{assignment.id}</td><td>{assignment.user_id}</td><td>{assignment.role_code}</td><td>{assignment.scope_type ?? '—'}</td><td>{assignment.scope_id ?? '—'}</td><td>{assignment.is_active ? 'Active' : 'Inactive'}</td><td>{assignment.assigned_by_user_id ?? '—'}</td><td>{assignment.assigned_at}</td><td>{assignment.revoked_at ?? '—'}</td></tr>)}</tbody></table></div>}
++      </section>
+     </div>
+   );
+ }
