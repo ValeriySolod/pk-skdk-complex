@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, EmptyState, Loader, PageHeader, Table, type TableColumn } from '../../shared/ui';
+import type { DocumentCategoryRead } from './documentCategoryContract.ts';
+import { createDocumentCategoriesPageCoordinator, type DocumentCategoriesPageCoordinator } from './documentCategoriesPageCoordinator.ts';
+import { documentCategoriesErrorMessages, type DocumentCategoriesState } from './documentCategoriesState.ts';
 import type { DocumentRead } from './documentContract.ts';
 import type { DocumentVersionRead } from './documentVersionContract.ts';
 import { createDocumentsPageCoordinator, type DocumentsPageCoordinator } from './documentsPageCoordinator.ts';
@@ -10,15 +13,19 @@ import styles from './DocumentsPage.module.css';
 export function DocumentsPage() {
   const [state, setState] = useState<DocumentsState>({ status: 'loading' }); const coordinator = useRef<DocumentsPageCoordinator | null>(null);
   const [versionsState, setVersionsState] = useState<DocumentVersionsState>({ status: 'unselected' });
+  const [categoriesState, setCategoriesState] = useState<DocumentCategoriesState>({ status: 'loading' });
   if (coordinator.current === null) coordinator.current = createDocumentsPageCoordinator({ applyState: setState, navigateToLogin: () => window.location.assign('/login') });
   const versionsCoordinator = useRef<DocumentVersionsPageCoordinator | null>(null);
   if (versionsCoordinator.current === null) versionsCoordinator.current = createDocumentVersionsPageCoordinator({ applyState: setVersionsState, navigateToLogin: () => window.location.assign('/login') });
+  const categoriesCoordinator = useRef<DocumentCategoriesPageCoordinator | null>(null);
+  if (categoriesCoordinator.current === null) categoriesCoordinator.current = createDocumentCategoriesPageCoordinator({ applyState: setCategoriesState, navigateToLogin: () => window.location.assign('/login') });
   const load = useCallback(async () => { await coordinator.current?.load(); }, []);
+  const loadCategories = useCallback(async () => { await categoriesCoordinator.current?.load(); }, []);
   const selectDocument = useCallback(async (document: DocumentRead) => { await versionsCoordinator.current?.load(document.id); }, []);
   const retryVersions = useCallback(async () => {
     if ('documentId' in versionsState) await versionsCoordinator.current?.load(versionsState.documentId);
   }, [versionsState]);
-  useEffect(() => { void load(); return () => { coordinator.current?.invalidate(); versionsCoordinator.current?.invalidate(); }; }, [load]);
+  useEffect(() => { void load(); void loadCategories(); return () => { coordinator.current?.invalidate(); versionsCoordinator.current?.invalidate(); categoriesCoordinator.current?.invalidate(); }; }, [load, loadCategories]);
   const columns = useMemo<readonly TableColumn<DocumentRead>[]>(() => [
     { id: 'number', header: 'Document number', cell: (item) => item.document_number ?? '—' }, { id: 'title', header: 'Title', cell: (item) => item.title },
     { id: 'type', header: 'Type', cell: (item) => item.document_type }, { id: 'status', header: 'Status', cell: (item) => item.status },
@@ -33,6 +40,12 @@ export function DocumentsPage() {
     { id: 'uploadedBy', header: 'Uploaded by', cell: (item) => item.uploaded_by ?? '—' },
     { id: 'uploadedAt', header: 'Uploaded at', cell: (item) => item.uploaded_at },
   ], []);
+  const categoryColumns = useMemo<readonly TableColumn<DocumentCategoryRead>[]>(() => [
+    { id: 'name', header: 'Name', cell: (item) => item.name },
+    { id: 'code', header: 'Code', cell: (item) => item.code },
+    { id: 'description', header: 'Description', cell: (item) => item.description ?? '—' },
+    { id: 'active', header: 'Active', cell: (item) => item.is_active ? 'Yes' : 'No' },
+  ], []);
   return <div className={styles.page}><PageHeader title="Document management" description="Read-only documents from the backend" />
     {state.status === 'loading' && <div className={styles.status} role="status" aria-live="polite"><Loader /><span>Loading documents...</span></div>}
     {state.status === 'error' && <div className={styles.errorPanel} role="alert"><p>{documentsErrorMessages[state.failure]}</p><Button type="button" onClick={() => void load()}>Retry</Button></div>}
@@ -45,6 +58,13 @@ export function DocumentsPage() {
       {versionsState.status === 'error' && <div className={styles.errorPanel} role="alert"><p>{documentVersionsErrorMessages[versionsState.failure]}</p><Button type="button" onClick={() => void retryVersions()}>Retry document versions</Button></div>}
       {versionsState.status === 'success' && versionsState.versions.length === 0 && <EmptyState title="No document versions found" />}
       {versionsState.status === 'success' && versionsState.versions.length > 0 && <Table columns={versionColumns} data={versionsState.versions} getRowKey={(item) => item.id} caption={`Versions for document ${versionsState.documentId}`} />}
+    </section>
+    <section className={styles.section} aria-labelledby="document-categories-heading">
+      <h2 id="document-categories-heading">Document categories</h2>
+      {categoriesState.status === 'loading' && <div className={styles.status} role="status" aria-live="polite"><Loader /><span>Loading document categories...</span></div>}
+      {categoriesState.status === 'error' && <div className={styles.errorPanel} role="alert"><p>{documentCategoriesErrorMessages[categoriesState.failure]}</p><Button type="button" onClick={() => void loadCategories()}>Retry document categories</Button></div>}
+      {categoriesState.status === 'success' && categoriesState.categories.length === 0 && <EmptyState title="No document categories found" />}
+      {categoriesState.status === 'success' && categoriesState.categories.length > 0 && <Table columns={categoryColumns} data={categoriesState.categories} getRowKey={(item) => item.id} caption="Document categories" />}
     </section>
   </div>;
 }

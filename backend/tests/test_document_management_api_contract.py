@@ -378,6 +378,60 @@ def test_category_endpoints_expose_response_contracts(client: TestClient) -> Non
     assert update_response.json()["is_active"] is False
 
 
+def test_document_categories_list_exposes_exact_read_contract(
+    client: TestClient,
+) -> None:
+    response = client.get(f"{BASE_URL}/categories")
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "id": 1,
+            "name": "Policies",
+            "code": "POLICY",
+            "description": "Policy documents",
+            "is_active": True,
+        }
+    ]
+
+
+def test_document_categories_list_serializes_nullable_description(
+    client: TestClient,
+) -> None:
+    create_response = client.post(
+        f"{BASE_URL}/categories",
+        json={
+            "name": "Forms",
+            "code": "FORM",
+            "description": None,
+            "is_active": False,
+        },
+    )
+    response = client.get(f"{BASE_URL}/categories")
+
+    assert create_response.status_code == 201
+    assert response.status_code == 200
+    assert response.json()[1] == {
+        "id": 2,
+        "name": "Forms",
+        "code": "FORM",
+        "description": None,
+        "is_active": False,
+    }
+
+
+def test_document_categories_list_requires_authentication() -> None:
+    original_overrides = app.dependency_overrides.copy()
+    app.dependency_overrides.pop(get_current_user, None)
+    try:
+        response = TestClient(app).get(f"{BASE_URL}/categories")
+    finally:
+        app.dependency_overrides = original_overrides
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Not authenticated"}
+
+
 def test_category_endpoints_return_not_found_and_validation_errors(
     client: TestClient,
 ) -> None:

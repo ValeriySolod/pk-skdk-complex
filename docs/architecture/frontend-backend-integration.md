@@ -1,4 +1,4 @@
-# Frontend–backend integration architecture (DEV-005 through DEV-016)
+# Frontend–backend integration architecture (DEV-005 through DEV-017)
 
 ## Scope and evidence
 
@@ -118,3 +118,11 @@ DEV-016 preserves the DEV-015 documents slice and adds a selected-document versi
 The versions section owns deterministic unselected, loading, populated, empty, and retryable error states independently from the documents list. Selecting a document starts a generation-scoped request; selecting another document, clearing selection, or unmounting invalidates the previous request. An obsolete response, including a stale 401, cannot replace the current selection state, clear the token, or navigate. Only an active 401 clears the token and navigates to `/login`; 403 and malformed, network, configuration, server, or unexpected failures preserve it. Demo versions are available only through the explicit mock path and never call the real endpoint.
 
 Focused frontend coverage fixes the exact runtime contract, selected canonical endpoint, demo isolation, error mapping, retry transitions, active and stale 401 handling, selection replacement protection, and stale/unmounted suppression. Backend coverage fixes exact serialization, nullable version metadata, datetime serialization, and the unauthenticated 401 boundary without changing backend behavior or authorization. DEV-016 adds no writes, uploads, downloads, version creation, document editing, redesign, dependency, authorization change, or unrelated refactoring.
+
+## Document Management categories read-only slice (DEV-017)
+
+DEV-017 preserves the independent DEV-015 documents and DEV-016 versions slices and adds an independent categories section to the registered `/documents` page. With demo mode disabled, it requests `GET /document-management/categories` through the canonical authenticated client, producing `GET /api/v1/document-management/categories`. Successful data must be an array whose objects contain exactly the `DocumentCategoryRead` fields: integer `id`; strings `name` and `code`; nullable string `description`; and boolean `is_active`. Missing, mistyped, or additional fields are rejected before UI state is updated.
+
+The categories section owns deterministic loading, populated, empty, and retryable error states independently from documents and versions. Demo categories are selected only through the explicit mock path and never invoke the canonical request path. Only an active categories request receiving HTTP 401 clears the token and navigates to `/login`; stale or unmounted 401 responses cannot clear the session or navigate. A 403 and malformed-response, network, configuration, server, unexpected, stale-request, or unmounted-request outcomes preserve the token. Generation invalidation prevents superseded or unmounted requests from changing current state or causing side effects.
+
+Focused frontend coverage fixes the exact runtime contract, canonical endpoint, demo isolation, error mapping, retry transitions, active and stale 401 handling, token preservation, and stale/unmounted suppression. Backend coverage fixes exact serialization, nullable description, boolean state, and the unauthenticated 401 boundary without changing backend behavior or authorization. DEV-017 adds no category writes, document writes, uploads, downloads, redesign, dependency, authorization change, unrelated refactoring, or architecture change.
