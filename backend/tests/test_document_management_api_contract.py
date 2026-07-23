@@ -431,6 +431,61 @@ def test_version_endpoints_expose_response_contracts(client: TestClient) -> None
     assert detail_response.json()["file_name"] == "quality-policy-v2.pdf"
 
 
+def test_document_versions_list_exposes_exact_read_contract(
+    client: TestClient,
+) -> None:
+    response = client.get(f"{BASE_URL}/documents/1/versions")
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "id": 1,
+            "document_id": 1,
+            "version": "1.0",
+            "file_name": "quality-policy.pdf",
+            "storage_path": "/documents/quality-policy.pdf",
+            "checksum": "sha256:contract",
+            "uploaded_by": 1,
+            "uploaded_at": "2026-07-05T12:00:00Z",
+        }
+    ]
+
+
+def test_document_versions_list_serializes_nullable_fields(
+    client: TestClient,
+) -> None:
+    create_response = client.post(
+        f"{BASE_URL}/documents/1/versions",
+        json={
+            "document_id": 1,
+            "version": "nullable",
+            "file_name": "nullable.pdf",
+            "storage_path": "/documents/nullable.pdf",
+            "checksum": None,
+            "uploaded_by": None,
+        },
+    )
+
+    response = client.get(f"{BASE_URL}/documents/1/versions")
+
+    assert create_response.status_code == 201
+    assert response.status_code == 200
+    assert response.json()[1]["checksum"] is None
+    assert response.json()[1]["uploaded_by"] is None
+
+
+def test_document_versions_list_requires_authentication() -> None:
+    original_overrides = app.dependency_overrides.copy()
+    app.dependency_overrides.pop(get_current_user, None)
+    try:
+        response = TestClient(app).get(f"{BASE_URL}/documents/1/versions")
+    finally:
+        app.dependency_overrides = original_overrides
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Not authenticated"}
+
+
 def test_version_endpoints_return_not_found_and_validation_errors(
     client: TestClient,
 ) -> None:

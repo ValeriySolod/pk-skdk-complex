@@ -1,4 +1,4 @@
-# Frontend–backend integration architecture (DEV-005 through DEV-015)
+# Frontend–backend integration architecture (DEV-005 through DEV-016)
 
 ## Scope and evidence
 
@@ -110,3 +110,11 @@ Demo mode remains an explicitly separate mock loader and never calls the real en
 Focused frontend coverage fixes the exact runtime contract, canonical endpoint, demo isolation, state and error mapping, active and stale 401 handling, retry transitions, page registration, and stale/unmounted suppression. Backend coverage fixes persisted-list behavior, nullable metadata, exact serialization, and the unauthenticated 401 boundary without changing backend behavior or authorization. DEV-015 adds no document writes, attachments, versions, workflow actions, dependency, architectural change, or unrelated client migration.
 
 Operational prerequisites remain a migrated database with an active user, a valid CORS origin for the deployed frontend, secure HTTPS deployment, a supplied `VITE_API_URL`, and demo mode disabled outside intentional demos. Automated coverage does not replace a manual deployed-browser check with a real backend session.
+
+## Document Management versions read-only slice (DEV-016)
+
+DEV-016 preserves the DEV-015 documents slice and adds a selected-document versions section backed by `GET /document-management/documents/{document_id}/versions` through the canonical authenticated client, producing `GET /api/v1/document-management/documents/{document_id}/versions`. Successful data must be an array whose objects contain exactly the `DocumentVersionRead` fields: integer `id` and `document_id`; strings `version`, `file_name`, and `storage_path`; nullable string `checksum`; nullable integer `uploaded_by`; and valid ISO datetime string `uploaded_at`. Missing, mistyped, additional, or invalid datetime fields are rejected before UI state is updated.
+
+The versions section owns deterministic unselected, loading, populated, empty, and retryable error states independently from the documents list. Selecting a document starts a generation-scoped request; selecting another document, clearing selection, or unmounting invalidates the previous request. An obsolete response, including a stale 401, cannot replace the current selection state, clear the token, or navigate. Only an active 401 clears the token and navigates to `/login`; 403 and malformed, network, configuration, server, or unexpected failures preserve it. Demo versions are available only through the explicit mock path and never call the real endpoint.
+
+Focused frontend coverage fixes the exact runtime contract, selected canonical endpoint, demo isolation, error mapping, retry transitions, active and stale 401 handling, selection replacement protection, and stale/unmounted suppression. Backend coverage fixes exact serialization, nullable version metadata, datetime serialization, and the unauthenticated 401 boundary without changing backend behavior or authorization. DEV-016 adds no writes, uploads, downloads, version creation, document editing, redesign, dependency, authorization change, or unrelated refactoring.
