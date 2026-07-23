@@ -1,0 +1,6 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { getDemoDocuments, getDocuments, getRealDocuments } from './documentsApi.ts';
+const documents = [{ id: 1, title: 'Policy', document_number: null, description: null, document_type: 'policy', status: 'active', organization_id: null, owner_user_id: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }];
+test('real documents loader uses the canonical endpoint and validates the response', async () => { let path; assert.deepEqual(await getRealDocuments(async (value) => { path = value; return documents; }), documents); assert.equal(path, '/document-management/documents'); });
+test('demo documents are detached and isolated from the real request path', async () => { const first = await getDemoDocuments(); first[0].title = 'Changed'; assert.notEqual((await getDemoDocuments())[0].title, 'Changed'); let calls = 0; assert.deepEqual(await getDocuments({ demoMode: true, request: async () => { calls += 1; return []; }, readDemoDocuments: async () => documents }), documents); assert.equal(calls, 0); assert.deepEqual(await getDocuments({ demoMode: false, request: async () => { calls += 1; return documents; }, readDemoDocuments: async () => [] }), documents); assert.equal(calls, 1); });

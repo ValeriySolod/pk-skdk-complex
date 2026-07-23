@@ -50,6 +50,9 @@ const WorkflowPage = lazy(() =>
     default: WorkflowPage,
   })),
 );
+const DocumentsPage = lazy(() =>
+  import('../modules/documents/DocumentsPage').then(({ DocumentsPage }) => ({ default: DocumentsPage })),
+);
 
 export type ModuleNavigation = {
   order: number;
@@ -98,6 +101,13 @@ export const modules: ModuleDefinition[] = [
     title: 'Вхідний реєстр',
     path: '/registries/incoming',
     Component: IncomingRegistryPage,
+  },
+  {
+    id: 'documents',
+    title: 'Documents',
+    path: '/documents',
+    Component: DocumentsPage,
+    navigation: { order: 25 },
   },
   {
     id: 'shipments',

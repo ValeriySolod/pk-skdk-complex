@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { ApiConfigurationError, ApiError } from '../../api/client.ts';
+import { InvalidDocumentsResponseError } from './documentContract.ts';
+import { documentsErrorMessages, loadDocuments } from './documentsState.ts';
+function setup(result) { let clears = 0; return { dependencies: { readDocuments: async () => { if (result instanceof Error) throw result; return result; }, clearSession: () => { clears += 1; } }, clears: () => clears }; }
+test('documents state represents populated and empty success', async () => { assert.deepEqual(await loadDocuments(setup([{ id: 1 }]).dependencies), { status: 'success', documents: [{ id: 1 }] }); assert.deepEqual(await loadDocuments(setup([]).dependencies), { status: 'success', documents: [] }); });
+test('only an active documents 401 clears the session', async () => { const active = setup(new ApiError('Unauthorized', 'http', 401)); assert.deepEqual(await loadDocuments(active.dependencies), { status: 'expired-session' }); assert.equal(active.clears(), 1); const stale = setup(new ApiError('Unauthorized', 'http', 401)); await loadDocuments(stale.dependencies, () => false); assert.equal(stale.clears(), 0); });
+test('documents failures are distinct and preserve the session', async () => { const cases = [[new ApiError('Forbidden', 'http', 403), 'forbidden'], [new InvalidDocumentsResponseError(), 'malformed-response'], [new ApiError('Network', 'network'), 'network'], [new ApiConfigurationError(), 'configuration'], [new ApiError('Server', 'http', 503), 'server'], [new Error('Unknown'), 'unexpected']]; for (const [error, failure] of cases) { const current = setup(error); assert.deepEqual(await loadDocuments(current.dependencies), { status: 'error', failure }); assert.equal(current.clears(), 0); assert.ok(documentsErrorMessages[failure]); } });

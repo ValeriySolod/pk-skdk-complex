@@ -1,4 +1,4 @@
-# Frontend–backend integration architecture (DEV-005 through DEV-009)
+# Frontend–backend integration architecture (DEV-005 through DEV-015)
 
 ## Scope and evidence
 
@@ -100,5 +100,13 @@ DEV-014 preserves the independent DEV-011 users, DEV-012 profiles, and DEV-013 r
 The audit-events section owns its loading, populated, empty, retryable error, and request generation independently from the other three sections. Demo data is selected only through the explicit mock path. Active 401 responses clear the token and navigate to `/login`; stale 401 responses have no side effect. A 403 and malformed, network, configuration, server, unexpected, stale-request, or unmounted-request outcomes preserve the token and cannot let an obsolete request replace current state or navigate.
 
 Focused frontend coverage fixes the exact runtime contract, canonical endpoint, demo isolation, error mapping, retry transitions, active and stale 401 handling, token preservation, and stale/unmounted suppression. Backend coverage fixes the exact serialized audit-events list contract, nullable fields, nested JSON details, datetime serialization, newest-first ordering, and unauthenticated 401 boundary without changing backend business behavior or authorization. DEV-014 adds no writes, redesign, dependency, unrelated client migration, authorization change, or backend behavior change.
+
+## Document Management documents read-only slice (DEV-015)
+
+DEV-015 adds the registered `/documents` page and connects it to `GET /document-management/documents` through the canonical authenticated client, producing `GET /api/v1/document-management/documents`. Successful data must be an array whose objects contain exactly the `DocumentRead` fields: integer `id`; strings `title`, `document_type`, and `status`; nullable strings `document_number` and `description`; nullable integers `organization_id` and `owner_user_id`; and valid ISO datetime strings `created_at` and `updated_at`. Missing, mistyped, additional, or invalid datetime fields are rejected before UI state is updated.
+
+Demo mode remains an explicitly separate mock loader and never calls the real endpoint. The page coordinator owns generation-safe loading, retry, expired-session navigation, and stale or unmounted result suppression. The page uses shared UI components to present loading, empty, populated table, and retryable error states.
+
+Focused frontend coverage fixes the exact runtime contract, canonical endpoint, demo isolation, state and error mapping, active and stale 401 handling, retry transitions, page registration, and stale/unmounted suppression. Backend coverage fixes persisted-list behavior, nullable metadata, exact serialization, and the unauthenticated 401 boundary without changing backend behavior or authorization. DEV-015 adds no document writes, attachments, versions, workflow actions, dependency, architectural change, or unrelated client migration.
 
 Operational prerequisites remain a migrated database with an active user, a valid CORS origin for the deployed frontend, secure HTTPS deployment, a supplied `VITE_API_URL`, and demo mode disabled outside intentional demos. Automated coverage does not replace a manual deployed-browser check with a real backend session.
